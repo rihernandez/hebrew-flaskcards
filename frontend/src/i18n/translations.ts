@@ -1,0 +1,94 @@
+export const translations = {
+  es: {
+    title: 'Flashcard',
+    selectLanguage: 'Idioma / שפה',
+    hideMenu: 'Ocultar Menú',
+    showMenu: 'Mostrar Menú',
+    topics: 'Temas',
+    studyModes: 'Modos de Estudio',
+    echo: '🎤 Echo',
+    focus: '🎯 Focus (5s)',
+    blitz: '⚡ Blitz (3s)',
+    bullet: '🚀 Bullet (1s)',
+    raiz: '🌱 Raíz',
+    examples: 'Ejemplos',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    pause: '⏹ Parar',
+    correct: '✓ Acertada',
+    incorrect: '✗ No acertada',
+    stop: '⏹ Detener',
+    completed: '🎉 ¡Completado!',
+    reviewedWords: 'Has revisado todas las {count} palabras',
+    focusSummary: '📊 Resumen Focus',
+    echoSummary: '📊 Resumen Echo',
+    correctWords: 'Acertadas: {count}',
+    incorrectWords: 'No acertadas: {count}',
+    totalWords: 'Total: {count}',
+    restart: '🔄 Reiniciar',
+    noWords: 'No hay palabras disponibles para este tema.',
+    ready: '¿Listo?',
+    listening: '🎤 Escuchando...',
+    youSaid: 'Dijiste: {text}',
+    expected: 'Esperado: {text}',
+    attempts: 'Intento {current} de 3',
+    microphoneError: '❌ Error: No se pudo acceder al micrófono',
+    microphonePermission: 'Por favor, permite el acceso al micrófono',
+  },
+  he: {
+    title: 'Flashcard',
+    selectLanguage: 'Idioma / שפה',
+    hideMenu: 'הסתר תפריט',
+    showMenu: 'הצג תפריט',
+    topics: 'נושאים',
+    studyModes: 'מצבי לימוד',
+    echo: '🎤 הד',
+    focus: '🎯 פוקוס (5 שניות)',
+    blitz: '⚡ בליץ (3 שניות)',
+    bullet: '🚀 בולט (שנייה אחת)',
+    raiz: '🌱 שורש',
+    examples: 'דוגמאות',
+    previous: 'הקודם',
+    next: 'הבא',
+    pause: '⏹ עצור',
+    correct: '✓ נכון',
+    incorrect: '✗ לא נכון',
+    stop: '⏹ עצור',
+    completed: '🎉 הושלם!',
+    reviewedWords: 'סקרת את כל {count} המילים',
+    focusSummary: '📊 סיכום פוקוס',
+    echoSummary: '📊 סיכום הד',
+    correctWords: 'נכונות: {count}',
+    incorrectWords: 'לא נכונות: {count}',
+    totalWords: 'סה״כ: {count}',
+    restart: '🔄 התחל מחדש',
+    noWords: 'אין מילים זמינות לנושא זה.',
+    ready: 'מוכן?',
+    listening: '🎤 מאזין...',
+    youSaid: 'אמרת: {text}',
+    expected: 'צפוי: {text}',
+    attempts: 'ניסיון {current} מתוך 3',
+    microphoneError: '❌ שגיאה: לא ניתן לגשת למיקרופון',
+    microphonePermission: 'אנא אפשר גישה למיקרופון',
+  },
+};
+
+export type Language = 'es' | 'he';
+
+export const getUILanguage = (learningLanguage: string): Language => {
+  // Si está aprendiendo Hebreo, la UI está en Español
+  if (learningLanguage === 'Hebreo') return 'es';
+  // Si está aprendiendo Español, la UI está en Hebreo
+  if (learningLanguage === 'Español') return 'he';
+  // Por defecto, Español
+  return 'es';
+};
+
+export const isRTL = (language: Language): boolean => {
+  return language === 'he';
+};
+
+// Determinar si el idioma de APRENDIZAJE es RTL
+export const isLearningLanguageRTL = (learningLanguage: string): boolean => {
+  return learningLanguage === 'Hebreo';
+};

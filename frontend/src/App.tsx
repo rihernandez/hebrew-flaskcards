@@ -5,14 +5,38 @@ import Flashcard from './components/Flashcard';
 import GrammarCard from './components/GrammarCard';
 import { translations, getUILanguage, isRTL, type Language } from './i18n/translations';
 
-const API_URL = 'http://localhost:3001/api';
-
 interface Word {
   id: string;
   word: string;
   pronunciation: string;
   meaning: string;
   examples: string[];
+  language: string;
+  topic: string;
+  genre?: string;
+}
+
+// Load data directly from JSON — no backend needed
+let allWordsCache: Word[] | null = null;
+
+async function loadAllWords(): Promise<Word[]> {
+  if (allWordsCache) return allWordsCache;
+  const res = await fetch('/flashcards.words.json');
+  const data = await res.json();
+  allWordsCache = data.map((w: Omit<Word, 'id'>, i: number) => ({ ...w, id: String(i) }));
+  return allWordsCache!;
+}
+
+function getLanguages(words: Word[]): string[] {
+  return [...new Set(words.map(w => w.language))].filter(l => l === 'Hebreo' || l === 'Español');
+}
+
+function getTopics(words: Word[], language: string): string[] {
+  return [...new Set(words.filter(w => w.language === language).map(w => w.topic))];
+}
+
+function getWordsByTopic(words: Word[], language: string, topic: string): Word[] {
+  return words.filter(w => w.language === language && w.topic === topic);
 }
 
 // Funciones para manejar localStorage - ahora incluye focus
@@ -37,6 +61,7 @@ const clearShownWords = (language: string, mode: 'blitz' | 'bullet' | 'focus') =
 };
 
 function App() {
+  const [allWords, setAllWords] = useState<Word[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [words, setWords] = useState<Word[]>([]);
@@ -76,81 +101,39 @@ function App() {
     document.documentElement.lang = uiLanguage;
   }, [uiRTL, uiLanguage]);
 
+  // Load JSON on mount
   useEffect(() => {
-    fetch(`${API_URL}/languages`)
-      .then(res => res.json())
-      .then(data => {
-        // Filtrar solo Hebreo y Español
-        const filteredLanguages = data.filter((lang: string) => 
-          lang === 'Hebreo' || lang === 'Español'
-        );
-        setLanguages(filteredLanguages);
-        
-        // Para agregar más idiomas en el futuro, descomenta las siguientes líneas:
-        // const filteredLanguages = data.filter((lang: string) => 
-        //   lang === 'Hebreo' || lang === 'Español' || lang === 'Inglés' || lang === 'Francés'
-        // );
-      });
+    loadAllWords().then(data => {
+      setAllWords(data);
+      setLanguages(getLanguages(data));
+    });
   }, []);
 
   useEffect(() => {
-    if (selectedLanguage) {
-      fetch(`${API_URL}/topics?language=${selectedLanguage}`)
-        .then(res => res.json())
-        .then(data => {
-          setTopics(data);
-          
-          // Si había un topic seleccionado y existe en el nuevo idioma, mantenerlo
-          if (selectedTopic && !selectedTopic.includes('Mode')) {
-            if (data.includes(selectedTopic)) {
-              // El topic existe en el nuevo idioma, cargar las palabras
-              fetch(`${API_URL}/words?language=${selectedLanguage}&topic=${selectedTopic}`)
-                .then(res => res.json())
-                .then(words => {
-                  setWords(words);
-                  setCurrentIndex(0);
-                });
-            } else {
-              // El topic no existe en el nuevo idioma (ej: Raíz), limpiar
-              setSelectedTopic('');
-              setWords([]);
-              setMenuVisible(true);
-            }
-          } else {
-            // No había topic seleccionado o era un modo
-            setSelectedTopic('');
-            setWords([]);
-            setMenuVisible(true);
-          }
-          
-          // Limpiar palabras mostradas al cambiar de idioma
-          clearShownWords(selectedLanguage, 'blitz');
-          clearShownWords(selectedLanguage, 'bullet');
-          clearShownWords(selectedLanguage, 'focus');
-        });
+    if (selectedLanguage && allWords.length > 0) {
+      setTopics(getTopics(allWords, selectedLanguage));
+      setSelectedTopic('');
+      setWords([]);
+      setMenuVisible(true);
+      clearShownWords(selectedLanguage, 'blitz');
+      clearShownWords(selectedLanguage, 'bullet');
+      clearShownWords(selectedLanguage, 'focus');
     }
-  }, [selectedLanguage]);
+  }, [selectedLanguage, allWords]);
 
   useEffect(() => {
-    if (selectedLanguage && selectedTopic && !selectedTopic.includes('Mode')) {
-      fetch(`${API_URL}/words?language=${selectedLanguage}&topic=${selectedTopic}`)
-        .then(res => res.json())
-        .then(data => {
-          setWords(data);
-          setCurrentIndex(0);
-          setMenuVisible(false);
-          // Asegurarse de limpiar cualquier modo activo
-          setAutoPlayMode(null);
-          setFocusMode(false);
-          setIsFlipped(backOnlyMode); // Si back-only está activo, mostrar reverso directamente
-          setIsComplete(false);
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-        });
+    if (selectedLanguage && selectedTopic && !selectedTopic.includes('Mode') && allWords.length > 0) {
+      const topicWords = getWordsByTopic(allWords, selectedLanguage, selectedTopic);
+      setWords(topicWords);
+      setCurrentIndex(0);
+      setMenuVisible(false);
+      setAutoPlayMode(null);
+      setFocusMode(false);
+      setIsFlipped(backOnlyMode);
+      setIsComplete(false);
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     }
-  }, [selectedLanguage, selectedTopic]);
+  }, [selectedLanguage, selectedTopic, allWords]);
 
   // Auto-play effect
   useEffect(() => {
@@ -238,116 +221,58 @@ function App() {
     }, 1000);
   };
 
+  const EXCLUDED_TOPICS = ['Gramática', 'Raíz', 'Frases útiles', 'Expresiones Idiomáticas (Nivim)'];
+
+  const getWordsForMode = (): Word[] => {
+    const shuffled = allWords
+      .filter(w => w.language === selectedLanguage && !EXCLUDED_TOPICS.includes(w.topic))
+      .sort(() => Math.random() - 0.5);
+    return shuffled;
+  };
+
   const handleBlitzMode = async () => {
     if (!selectedLanguage) return;
-    
     stopAutoPlay();
     setMenuVisible(false);
-    
-    // Obtener todas las palabras del idioma, excluyendo Gramática, Raíz y Frases útiles
-    const allWords: Word[] = [];
-    for (const topic of topics) {
-      if (topic !== 'Gramática' && topic !== 'Raíz' && topic !== 'Frases útiles' && topic !== 'Expresiones Idiomáticas (Nivim)') {
-        const response = await fetch(`${API_URL}/words?language=${selectedLanguage}&topic=${topic}`);
-        const topicWords = await response.json();
-        allWords.push(...topicWords);
-      }
-    }
-    
-    // Filtrar palabras ya mostradas
-    const shownWordIds = getShownWords(selectedLanguage, 'blitz');
-    const unseenWords = allWords.filter(word => !shownWordIds.includes(word.id));
-    
-    // Si no hay palabras sin ver, reiniciar y usar todas
-    const wordsToShow = unseenWords.length > 0 ? unseenWords : allWords;
-    if (unseenWords.length === 0) {
-      clearShownWords(selectedLanguage, 'blitz');
-    }
-    
-    // Aleatorizar las palabras
-    const shuffledWords = [...wordsToShow].sort(() => Math.random() - 0.5);
-    
-    setWords(shuffledWords);
+    const pool = getWordsForMode();
+    const shownIds = getShownWords(selectedLanguage, 'blitz');
+    const unseen = pool.filter(w => !shownIds.includes(w.id));
+    const toShow = unseen.length > 0 ? unseen : pool;
+    if (unseen.length === 0) clearShownWords(selectedLanguage, 'blitz');
+    const shuffled = [...toShow].sort(() => Math.random() - 0.5);
+    setWords(shuffled);
     setCurrentIndex(0);
     setSelectedTopic('Blitz Mode');
-    
-    // Iniciar countdown antes de comenzar el modo
-    startCountdown(() => {
-      setAutoPlayMode('blitz');
-      setIsComplete(false);
-    });
+    startCountdown(() => { setAutoPlayMode('blitz'); setIsComplete(false); });
   };
 
   const handleBulletMode = async () => {
     if (!selectedLanguage) return;
-    
     stopAutoPlay();
     setMenuVisible(false);
-    
-    // Obtener todas las palabras del idioma, excluyendo Gramática, Raíz y Frases útiles
-    const allWords: Word[] = [];
-    for (const topic of topics) {
-      if (topic !== 'Gramática' && topic !== 'Raíz' && topic !== 'Frases útiles' && topic !== 'Expresiones Idiomáticas (Nivim)') {
-        const response = await fetch(`${API_URL}/words?language=${selectedLanguage}&topic=${topic}`);
-        const topicWords = await response.json();
-        allWords.push(...topicWords);
-      }
-    }
-    
-    // Filtrar palabras ya mostradas
-    const shownWordIds = getShownWords(selectedLanguage, 'bullet');
-    const unseenWords = allWords.filter(word => !shownWordIds.includes(word.id));
-    
-    // Si no hay palabras sin ver, reiniciar y usar todas
-    const wordsToShow = unseenWords.length > 0 ? unseenWords : allWords;
-    if (unseenWords.length === 0) {
-      clearShownWords(selectedLanguage, 'bullet');
-    }
-    
-    // Aleatorizar las palabras
-    const shuffledWords = [...wordsToShow].sort(() => Math.random() - 0.5);
-    
-    setWords(shuffledWords);
+    const pool = getWordsForMode();
+    const shownIds = getShownWords(selectedLanguage, 'bullet');
+    const unseen = pool.filter(w => !shownIds.includes(w.id));
+    const toShow = unseen.length > 0 ? unseen : pool;
+    if (unseen.length === 0) clearShownWords(selectedLanguage, 'bullet');
+    const shuffled = [...toShow].sort(() => Math.random() - 0.5);
+    setWords(shuffled);
     setCurrentIndex(0);
     setSelectedTopic('Bullet Mode');
-    
-    // Iniciar countdown antes de comenzar el modo
-    startCountdown(() => {
-      setAutoPlayMode('bullet');
-      setIsComplete(false);
-    });
+    startCountdown(() => { setAutoPlayMode('bullet'); setIsComplete(false); });
   };
 
   const handleFocusMode = async () => {
     if (!selectedLanguage) return;
-    
     stopAutoPlay();
     setMenuVisible(false);
-    
-    // Obtener todas las palabras del idioma, excluyendo Gramática, Raíz y Frases útiles
-    const allWords: Word[] = [];
-    for (const topic of topics) {
-      if (topic !== 'Gramática' && topic !== 'Raíz' && topic !== 'Frases útiles' && topic !== 'Expresiones Idiomáticas (Nivim)') {
-        const response = await fetch(`${API_URL}/words?language=${selectedLanguage}&topic=${topic}`);
-        const topicWords = await response.json();
-        allWords.push(...topicWords);
-      }
-    }
-    
-    // Filtrar palabras ya mostradas en Focus
-    const shownWordIds = getShownWords(selectedLanguage, 'focus');
-    const unseenWords = allWords.filter(word => !shownWordIds.includes(word.id));
-    
-    // Si no hay palabras sin ver, reiniciar y usar todas
-    const wordsToShow = unseenWords.length > 0 ? unseenWords : allWords;
-    if (unseenWords.length === 0) {
-      clearShownWords(selectedLanguage, 'focus');
-    }
-    
-    // Aleatorizar las palabras
-    const shuffledWords = [...wordsToShow].sort(() => Math.random() - 0.5);
-    
-    setWords(shuffledWords);
+    const pool = getWordsForMode();
+    const shownIds = getShownWords(selectedLanguage, 'focus');
+    const unseen = pool.filter(w => !shownIds.includes(w.id));
+    const toShow = unseen.length > 0 ? unseen : pool;
+    if (unseen.length === 0) clearShownWords(selectedLanguage, 'focus');
+    const shuffled = [...toShow].sort(() => Math.random() - 0.5);
+    setWords(shuffled);
     setCurrentIndex(0);
     setSelectedTopic('Focus Mode');
     setFocusMode(true);
@@ -356,11 +281,7 @@ function App() {
     setFocusShowingSummary(false);
     setIsFlipped(false);
     setIsComplete(false);
-    
-    // Iniciar secuencia directamente sin countdown
-    timeoutRef.current = window.setTimeout(() => {
-      setIsFlipped(true);
-    }, 5000);
+    timeoutRef.current = window.setTimeout(() => { setIsFlipped(true); }, 5000);
   };
 
   const handleFocusCorrect = () => {

@@ -29,7 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: frontend
-          tagName: v1.8.0
-          releaseName: Hebrew Flashcards v1.8.0
+          tagName: v1.9.0
+          releaseName: Hebrew Flashcards v1.9.0
           releaseDraft: true
           prerelease: false

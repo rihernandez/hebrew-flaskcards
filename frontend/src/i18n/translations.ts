@@ -73,6 +73,23 @@ export const translations = {
   },
 };
 
+export const topicTranslations: Record<string, string> = {
+  'Adjetivos':                'Adjetivos — שמות תואר',
+  'Adverbios':                'Adverbios — תארי פועל',
+  'Alfabeto':                 'Alfabeto — אלפבית',
+  'Cardinales':               'Cardinales — מספרים עיקריים',
+  'Frases útiles':            'Frases útiles — ביטויים שימושיים',
+  'Locuciones adverbiales':   'Locuciones — צירופי תואר',
+  'Números':                  'Números — מספרים',
+  'Preposiciones y artículos':'Preposiciones — מילות יחס',
+  'Pronombres':               'Pronombres — כינויי גוף',
+  'Sustantivos':              'Sustantivos — שמות עצם',
+  'Verbos':                   'Verbos — פעלים',
+  'Gramática':                'Gramática — דקדוק',
+  'Raíz':                     'Raíz — שורש',
+  'Expresiones Idiomáticas (Nivim)': 'Expresiones — ניבים',
+};
+
 export type Language = 'es' | 'he';
 
 export const getUILanguage = (learningLanguage: string): Language => {

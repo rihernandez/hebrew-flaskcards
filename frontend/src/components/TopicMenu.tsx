@@ -1,3 +1,5 @@
+import { topicTranslations } from '../i18n/translations';
+
 interface TopicMenuProps {
   topics: string[];
   selectedTopic: string;
@@ -10,10 +12,14 @@ interface TopicMenuProps {
 }
 
 export default function TopicMenu({ topics, selectedTopic, onTopicChange, onFocusMode, onBlitzMode, onBulletMode, selectedLanguage, translations }: TopicMenuProps) {
-  // Filtrar topics según el idioma seleccionado
   const visibleTopics = selectedLanguage === 'Hebreo' 
-    ? topics // Mostrar todos los topics incluyendo Raíz
-    : topics.filter(topic => topic !== 'Raíz'); // Ocultar Raíz si no es Hebreo
+    ? topics
+    : topics.filter(topic => topic !== 'Raíz');
+
+  // Cuando aprenden Español, la UI es hebreo → mostrar nombre bilingüe
+  const showBilingual = selectedLanguage === 'Español';
+  const displayName = (topic: string) =>
+    showBilingual ? (topicTranslations[topic] ?? topic) : topic;
 
   return (
     <div className="topic-menu">
@@ -25,7 +31,7 @@ export default function TopicMenu({ topics, selectedTopic, onTopicChange, onFocu
             className={selectedTopic === topic ? 'active' : ''}
             onClick={() => onTopicChange(topic)}
           >
-            {topic}
+            {displayName(topic)}
           </li>
         ))}
       </ul>

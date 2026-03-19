@@ -3,9 +3,12 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": [
-    "main"
+    "main",
+    "pdf_*"
   ],
   "permissions": [
-    "core:default"
+    "core:default",
+    "core:window:allow-create",
+    "core:webview:allow-create-webview-window"
   ]
 }

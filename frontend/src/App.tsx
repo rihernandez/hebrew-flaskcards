@@ -4,6 +4,7 @@ import TopicMenu from './components/TopicMenu';
 import Flashcard from './components/Flashcard';
 import GrammarCard from './components/GrammarCard';
 import { translations, getUILanguage, isRTL, type Language } from './i18n/translations';
+import GuidesMenu from './components/GuidesMenu';
 
 interface Word {
   id: string;
@@ -91,6 +92,9 @@ function App() {
   const uiLanguage: Language = selectedLanguage ? getUILanguage(selectedLanguage) : 'es';
   const t = translations[uiLanguage];
   const uiRTL = isRTL(uiLanguage);
+  
+  // Detectar si corre dentro de Tauri
+  const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__;
   
   // Determinar si el idioma de aprendizaje es RTL
   const learningRTL = selectedLanguage === 'Hebreo';
@@ -387,7 +391,10 @@ function App() {
       )}
       
       <header>
-        <h1 onClick={handleTitleClick} style={{ cursor: 'pointer' }}>{t.title}</h1>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <h1 onClick={handleTitleClick} style={{ cursor: 'pointer', margin: 0 }}>{t.title}</h1>
+          <span style={{ fontSize: '0.6rem', color: '#666', letterSpacing: '0.04em', marginTop: '2px' }}>— Richard HC</span>
+        </div>
         <div className="header-right">
           {words.length > 0 && (
             <button className="toggle-menu-btn" onClick={toggleMenu}>
@@ -423,16 +430,19 @@ function App() {
       
       <div className={`main-content ${!menuVisible ? 'menu-hidden' : ''}`}>
         {selectedLanguage && topics.length > 0 && menuVisible && (
-          <TopicMenu 
-            topics={topics}
-            selectedTopic={selectedTopic}
-            onTopicChange={setSelectedTopic}
-            onFocusMode={handleFocusMode}
-            onBlitzMode={handleBlitzMode}
-            onBulletMode={handleBulletMode}
-            selectedLanguage={selectedLanguage}
-            translations={t}
-          />
+          <div>
+            <TopicMenu 
+              topics={topics}
+              selectedTopic={selectedTopic}
+              onTopicChange={setSelectedTopic}
+              onFocusMode={handleFocusMode}
+              onBlitzMode={handleBlitzMode}
+              onBulletMode={handleBulletMode}
+              selectedLanguage={selectedLanguage}
+              translations={t}
+            />
+            <GuidesMenu isTauri={isTauri} />
+          </div>
         )}
         
         <div className="flashcard-container">

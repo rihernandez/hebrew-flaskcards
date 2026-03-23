@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { getVersion } from '@tauri-apps/api/app';
 
 type Status = 'idle' | 'checking' | 'available' | 'up-to-date' | 'installing';
 
 export default function UpdateChecker() {
   const [status, setStatus] = useState<Status>('idle');
   const [newVersion, setNewVersion] = useState('');
+  const [currentVersion, setCurrentVersion] = useState('');
 
   useEffect(() => {
+    getVersion().then(v => setCurrentVersion(v)).catch(() => {});
     const timer = setTimeout(async () => {
       try {
         const version = await invoke<string | null>('check_for_updates');
@@ -47,12 +50,17 @@ export default function UpdateChecker() {
   if (status === 'up-to-date') return <span className="update-status-text ok">✓ מעודכן</span>;
 
   return (
-    <button
-      className="update-check-btn"
-      onClick={checkUpdate}
-      disabled={status === 'checking'}
-    >
-      {status === 'checking' ? '⏳' : 'עדכון'}
-    </button>
+    <>
+      <button
+        className="update-check-btn"
+        onClick={checkUpdate}
+        disabled={status === 'checking'}
+      >
+        {status === 'checking' ? '⏳' : 'עדכון'}
+      </button>
+      {currentVersion && (
+        <span className="app-version">v{currentVersion}</span>
+      )}
+    </>
   );
 }

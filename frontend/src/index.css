@@ -2632,3 +2632,20 @@ html.dark .wod-back { background: #4c1d95; }
   .wod-meaning { font-size: 22px; }
   .wod-card { height: 200px; }
 }
+
+/* ===== App version badge ===== */
+.app-version {
+  position: fixed;
+  bottom: 10px;
+  right: 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  user-select: none;
+  z-index: 9999;
+  letter-spacing: 0.04em;
+}
+
+html.dark .app-version {
+  color: rgba(255, 255, 255, 0.25);
+}

@@ -31,12 +31,11 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<String>, Stri
 #[tauri::command]
 async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     use tauri_plugin_updater::UpdaterExt;
-    use tauri_plugin_process::exit;
 
     let updater = app.updater().map_err(|e| e.to_string())?;
     if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
         update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
-        exit(0);
+        app.restart();
     }
     Ok(())
 }

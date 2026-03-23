@@ -1,18 +1,11 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import type { Language } from '../i18n/translations';
 
-const i18n = {
-  es: { btn: 'Update', checking: '⏳', upToDate: '✓ Al día', install: 'Actualizar', installing: '⬇️ Instalando...' },
-  he: { btn: 'עדכון', checking: '⏳', upToDate: '✓ מעודכן', install: 'עדכן', installing: '⬇️ מתקין...' },
-};
+type Status = 'idle' | 'checking' | 'available' | 'up-to-date' | 'installing';
 
-type Status = 'idle' | 'checking' | 'available' | 'up-to-date' | 'installing' | 'error';
-
-export default function UpdateChecker({ uiLanguage = 'he' }: { uiLanguage?: Language }) {
+export default function UpdateChecker() {
   const [status, setStatus] = useState<Status>('idle');
   const [newVersion, setNewVersion] = useState('');
-  const t = i18n[uiLanguage];
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -44,23 +37,22 @@ export default function UpdateChecker({ uiLanguage = 'he' }: { uiLanguage?: Lang
       <div className="update-banner">
         <span className="update-new-dot" />
         <span>v{newVersion}</span>
-        <button className="update-install-btn" onClick={installUpdate}>{t.install}</button>
+        <button className="update-install-btn" onClick={installUpdate}>עדכן</button>
         <button className="update-dismiss-btn" onClick={() => setStatus('idle')}>✕</button>
       </div>
     );
   }
 
-  if (status === 'installing') return <span className="update-status-text">{t.installing}</span>;
-  if (status === 'up-to-date') return <span className="update-status-text ok">{t.upToDate}</span>;
+  if (status === 'installing') return <span className="update-status-text">⬇️ מתקין...</span>;
+  if (status === 'up-to-date') return <span className="update-status-text ok">✓ מעודכן</span>;
 
   return (
     <button
       className="update-check-btn"
       onClick={checkUpdate}
       disabled={status === 'checking'}
-      title={t.btn}
     >
-      {status === 'checking' ? t.checking : t.btn}
+      {status === 'checking' ? '⏳' : 'עדכון'}
     </button>
   );
 }

@@ -159,3 +159,85 @@ Esto levantará tanto el backend como el frontend en contenedores.
 - [mobile-app/QUICK_START.md](mobile-app/QUICK_START.md) - Guía de inicio rápido
 - [mobile-app/BUILD_APK.md](mobile-app/BUILD_APK.md) - Cómo construir APK
 - [mobile-app/DEVELOPMENT.md](mobile-app/DEVELOPMENT.md) - Guía de desarrollo
+
+## 🚀 Cómo Generar Cada Versión
+
+### 📱 Android APK (EAS Build — nube)
+
+Requiere cuenta en [expo.dev](https://expo.dev).
+
+```bash
+cd mobile-app
+npm install -g eas-cli
+eas login
+eas build -p android --profile production
+```
+
+El build corre en los servidores de Expo (~5-10 min). Cuando termina, descarga el `.apk` desde tu cuenta en expo.dev.
+
+---
+
+### 🪟 Windows (.exe instalador)
+
+El build se genera automáticamente vía GitHub Actions al hacer push a `master`.
+
+1. Haz push a `master`
+2. Ve a tu repo en GitHub → **Actions** → espera ~10-15 min
+3. Ve a **Releases** → descarga el instalador `.exe` del draft generado
+
+Para compilar localmente (requiere Rust + Node 20):
+
+```bash
+cd frontend
+npm install
+npm run tauri build
+```
+
+El instalador queda en `frontend/src-tauri/target/release/bundle/`.
+
+---
+
+### 🐧 Linux (.AppImage)
+
+Requiere dependencias del sistema:
+
+```bash
+sudo apt update && sudo apt install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+```
+
+Luego compilar:
+
+```bash
+cd frontend
+npm install
+npm run tauri build
+```
+
+El `.AppImage` queda en `frontend/src-tauri/target/release/bundle/appimage/`.
+
+Para ejecutarlo:
+
+```bash
+chmod +x frontend/src-tauri/target/release/bundle/appimage/*.AppImage
+./frontend/src-tauri/target/release/bundle/appimage/*.AppImage
+```
+
+---
+
+### 🍎 macOS (.dmg)
+
+Requiere una Mac con Xcode Command Line Tools instalado:
+
+```bash
+xcode-select --install
+```
+
+Luego:
+
+```bash
+cd frontend
+npm install
+npm run tauri build
+```
+
+El `.dmg` queda en `frontend/src-tauri/target/release/bundle/dmg/`.

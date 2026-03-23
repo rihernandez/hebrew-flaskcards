@@ -7,6 +7,10 @@ import { translations, getUILanguage, isRTL, type Language } from './i18n/transl
 import GuidesMenu from './components/GuidesMenu';
 import SearchBar from './components/SearchBar';
 import WordModal from './components/WordModal';
+import WriteMode from './components/WriteMode';
+import QuizMode from './components/QuizMode';
+import { addFocusError, getFavorites, getFocusErrors } from './utils/storage';
+import UpdateChecker from './components/UpdateChecker';
 
 interface Word {
   id: string;
@@ -86,12 +90,28 @@ function App() {
   // Back-only mode (solo aplica en temas, no en modos)
   const [backOnlyMode, setBackOnlyMode] = useState(false);
 
+  // Write mode
+  const [writeMode, setWriteMode] = useState(false);
+  const [writeSummary, setWriteSummary] = useState<{ correct: number; incorrect: number } | null>(null);
+
+  // Quiz mode
+  const [quizMode, setQuizMode] = useState(false);
+  const [quizSummary, setQuizSummary] = useState<{ correct: number; incorrect: number } | null>(null);
+
   // Countdown state
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownNumber, setCountdownNumber] = useState<number | string>(3);
 
   // Search
   const [searchWord, setSearchWord] = useState<Word | null>(null);
+
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('darkMode', String(darkMode));
+  }, [darkMode]);
 
   // Determinar el idioma de la UI basado en el idioma de aprendizaje
   const uiLanguage: Language = selectedLanguage ? getUILanguage(selectedLanguage) : 'es';
@@ -293,8 +313,23 @@ function App() {
     timeoutRef.current = window.setTimeout(() => { setIsFlipped(true); }, 5000);
   };
 
-  const handleFocusCorrect = () => {
-    // Marcar palabra como mostrada
+  const handleWriteMode = () => {
+    if (!selectedLanguage) return;
+    stopAutoPlay();
+    setMenuVisible(false);
+    const pool = getWordsForMode();
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    setWords(shuffled);
+    setCurrentIndex(0);
+    setSelectedTopic('Write Mode');
+    setWriteMode(true);
+    setWriteSummary(null);
+    setFocusMode(false);
+    setIsFlipped(false);
+    setIsComplete(false);
+  };
+
+  const handleFocusCorrect = () => {    // Marcar palabra como mostrada
     const currentWord = words[currentIndex];
     addShownWord(selectedLanguage, 'focus', currentWord.id);
     
@@ -303,10 +338,9 @@ function App() {
   };
 
   const handleFocusIncorrect = () => {
-    // Marcar palabra como mostrada
     const currentWord = words[currentIndex];
     addShownWord(selectedLanguage, 'focus', currentWord.id);
-    
+    addFocusError(selectedLanguage, currentWord.id); // guardar en historial
     setFocusIncorrectCount(prev => prev + 1);
     moveToNextFocusWord();
   };
@@ -349,6 +383,61 @@ function App() {
     setIsFlipped(false);
   };
 
+  const stopWriteMode = () => {
+    setWriteMode(false);
+    setWriteSummary(null);
+  };
+
+  const handleQuizMode = () => {
+    if (!selectedLanguage) return;
+    stopAutoPlay();
+    setMenuVisible(false);
+    const pool = getWordsForMode();
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    setWords(shuffled);
+    setCurrentIndex(0);
+    setSelectedTopic('Quiz Mode');
+    setQuizMode(true);
+    setQuizSummary(null);
+    setWriteMode(false);
+    setFocusMode(false);
+    setIsFlipped(false);
+    setIsComplete(false);
+  };
+
+  const stopQuizMode = () => {
+    setQuizMode(false);
+    setQuizSummary(null);
+  };
+
+  const handleFavoritesMode = () => {
+    if (!selectedLanguage) return;
+    stopAutoPlay();
+    const favIds = getFavorites();
+    const favWords = allWords.filter(w => favIds.includes(w.id) && w.language === selectedLanguage);
+    if (favWords.length === 0) return;
+    setMenuVisible(false);
+    setWords([...favWords].sort(() => Math.random() - 0.5));
+    setCurrentIndex(0);
+    setSelectedTopic('Favorites Mode');
+    setWriteMode(false); setQuizMode(false); setFocusMode(false);
+    setIsFlipped(false); setIsComplete(false);
+  };
+
+  const handleErrorsMode = () => {
+    if (!selectedLanguage) return;
+    stopAutoPlay();
+    const errIds = getFocusErrors(selectedLanguage);
+    const errWords = allWords.filter(w => errIds.includes(w.id) && w.language === selectedLanguage);
+    if (errWords.length === 0) return;
+    setMenuVisible(false);
+    setWords([...errWords].sort(() => Math.random() - 0.5));
+    setCurrentIndex(0);
+    setSelectedTopic('Errors Mode');
+    setWriteMode(false); setQuizMode(false); setFocusMode(false);
+    setIsFlipped(false); setIsComplete(false);
+  };
+
   const handleNext = () => {
     stopAutoPlay();
     if (currentIndex < words.length - 1) {
@@ -379,6 +468,8 @@ function App() {
     // Resetear todo excepto el idioma seleccionado
     stopAutoPlay();
     stopFocusMode();
+    stopWriteMode();
+    stopQuizMode();
     setWords([]);
     setSelectedTopic('');
     setCurrentIndex(0);
@@ -420,7 +511,6 @@ function App() {
               onClick={() => {
                 const next = !backOnlyMode;
                 setBackOnlyMode(next);
-                // Si hay un tema activo (no modo), aplicar inmediatamente
                 if (words.length > 0 && !autoPlayMode && !focusMode) {
                   setIsFlipped(next);
                 }
@@ -431,6 +521,15 @@ function App() {
               <span className="toggle-knob" />
             </button>
           </div>
+          <button
+            className="dark-mode-btn"
+            onClick={() => setDarkMode(d => !d)}
+            aria-label="Tema oscuro"
+            title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          {isTauri && <UpdateChecker />}
           <LanguageSelector 
             languages={languages}
             selectedLanguage={selectedLanguage}
@@ -450,16 +549,69 @@ function App() {
               onFocusMode={handleFocusMode}
               onBlitzMode={handleBlitzMode}
               onBulletMode={handleBulletMode}
+              onWriteMode={handleWriteMode}
+              onQuizMode={handleQuizMode}
+              onFavoritesMode={handleFavoritesMode}
+              onErrorsMode={handleErrorsMode}
               selectedLanguage={selectedLanguage}
               translations={t}
+              allWords={allWords}
             />
             <GuidesMenu isTauri={isTauri} />
           </div>
         )}
         
         <div className="flashcard-container">
-          {focusShowingSummary ? (
-            // Mostrar resumen de Focus Mode
+          {/* Write Mode */}
+          {writeMode && !writeSummary && words.length > 0 && (
+            <WriteMode
+              words={words}
+              translations={t}
+              onFinish={(correct, incorrect) => {
+                stopWriteMode();
+                setWriteSummary({ correct, incorrect });
+              }}
+            />
+          )}
+          {writeSummary && (
+            <div className="focus-summary">
+              <h2>{t.writeSummary}</h2>
+              <div className="stats">
+                <p className="correct-count">{t.correctWords.replace('{count}', writeSummary.correct.toString())}</p>
+                <p className="incorrect-count">{t.incorrectWords.replace('{count}', writeSummary.incorrect.toString())}</p>
+                <p className="total-count">{t.totalWords.replace('{count}', (writeSummary.correct + writeSummary.incorrect).toString())}</p>
+              </div>
+              <button onClick={() => { setWriteSummary(null); setWords([]); setMenuVisible(true); setSelectedTopic(''); }} className="restart-btn">
+                {t.restart}
+              </button>
+            </div>
+          )}
+          {/* Quiz Mode */}
+          {quizMode && !quizSummary && words.length > 0 && (
+            <QuizMode
+              words={words}
+              allWords={allWords}
+              translations={t}
+              onFinish={(correct, incorrect) => {
+                stopQuizMode();
+                setQuizSummary({ correct, incorrect });
+              }}
+            />
+          )}
+          {quizSummary && (
+            <div className="focus-summary">
+              <h2>{t.quizSummary}</h2>
+              <div className="stats">
+                <p className="correct-count">{t.correctWords.replace('{count}', quizSummary.correct.toString())}</p>
+                <p className="incorrect-count">{t.incorrectWords.replace('{count}', quizSummary.incorrect.toString())}</p>
+                <p className="total-count">{t.totalWords.replace('{count}', (quizSummary.correct + quizSummary.incorrect).toString())}</p>
+              </div>
+              <button onClick={() => { setQuizSummary(null); setWords([]); setMenuVisible(true); setSelectedTopic(''); }} className="restart-btn">
+                {t.restart}
+              </button>
+            </div>
+          )}
+          {!writeMode && !writeSummary && !quizMode && !quizSummary && focusShowingSummary ? (            // Mostrar resumen de Focus Mode
             <div className="focus-summary">
               <h2>{t.focusSummary}</h2>
               <div className="stats">
@@ -471,7 +623,7 @@ function App() {
                 {t.restart}
               </button>
             </div>
-          ) : words.length > 0 && !isComplete && (
+          ) : !writeMode && !writeSummary && !quizMode && !quizSummary && words.length > 0 && !isComplete && (
             <>
               {selectedTopic === 'Gramática' ? (
                 // Mostrar GrammarCard para el tema Gramática
@@ -539,7 +691,7 @@ function App() {
               )}
             </>
           )}
-          {isComplete && (
+          {!writeMode && !quizMode && isComplete && (
             <div className="complete-message">
               <h2>{t.completed}</h2>
               <p>{t.reviewedWords.replace('{count}', words.length.toString())}</p>

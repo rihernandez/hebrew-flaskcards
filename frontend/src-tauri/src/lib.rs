@@ -17,10 +17,36 @@ fn open_pdf(app: tauri::AppHandle, pdf: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    use tauri_plugin_updater::UpdaterExt;
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    match updater.check().await {
+        Ok(Some(update)) => Ok(Some(update.version.clone())),
+        Ok(None) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+    use tauri_plugin_process::exit;
+
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        update.download_and_install(|_, _| {}, || {}).await.map_err(|e| e.to_string())?;
+        exit(0);
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![open_pdf])
+    .plugin(tauri_plugin_updater::Builder::new().build())
+    .plugin(tauri_plugin_process::init())
+    .invoke_handler(tauri::generate_handler![open_pdf, check_for_updates, install_update])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

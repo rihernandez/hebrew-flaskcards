@@ -58,3 +58,5 @@ export const getAllWordsExcept = (language: string, excludeTopics: string[]): Wo
     w.language === language && !excludeTopics.includes(w.topic)
   );
 };
+
+export const getAllWords = (): Word[] => data;

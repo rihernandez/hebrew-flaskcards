@@ -8,8 +8,9 @@ import { StatusBar } from 'expo-status-bar';
 import { Flashcard } from './src/components/Flashcard';
 import { TopicMenu } from './src/components/TopicMenu';
 import { Word, Language } from './src/types/Word';
-import { getTopics, getWords, getAllWordsExcept } from './src/utils/dataService';
+import { getTopics, getWords, getAllWordsExcept, getAllWords } from './src/utils/dataService';
 import { translations, getUILanguage, isRTL } from './src/utils/translations';
+import { SearchBar } from './src/components/SearchBar';
 
 type Mode = 'normal' | 'blitz' | 'bullet' | 'focus';
 
@@ -248,6 +249,10 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.searchContainer}>
+        <SearchBar allWords={getAllWords()} />
+      </View>
+
       {showMenu ? (
         <TopicMenu
           topics={topics}
@@ -382,7 +387,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: s(8),
   },
-  backOnlyLabel: {
+  searchContainer: {
+    paddingHorizontal: s(15),
+    paddingVertical: s(8),
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    zIndex: 100,
+  },  backOnlyLabel: {
     fontSize: s(12),
     color: '#667eea',
     fontWeight: '500',

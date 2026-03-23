@@ -37,7 +37,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "RWTwKS4lQ72Ytp1H33/gopNK++BAzHw06dsb2sJe3J+zU7do+D+gDHSt",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI2OThCRDQzMjUyRTI5RjAKUldUd0tTNGxRNzJZdHAxSDMzL2dvcE5LKytCQXpIdzA2ZHNiMnNKZTNKK3pVN2RvK0QrZ0RIU3QK",
       "endpoints": [
         "https://github.com/rihernandez/hebrew-flaskcards/releases/latest/download/latest.json"
       ],

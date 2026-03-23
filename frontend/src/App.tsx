@@ -562,7 +562,7 @@ function App() {
           >
             {darkMode ? '☀️' : '🌙'}
           </button>
-          {isTauri && <UpdateChecker />}
+          {isTauri && <UpdateChecker uiLanguage={uiLanguage} />}
           <LanguageSelector 
             languages={languages}
             selectedLanguage={selectedLanguage}

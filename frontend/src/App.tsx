@@ -532,7 +532,7 @@ function App() {
           />
         )}
         <div className="header-right">
-          {words.length > 0 && (
+          {selectedLanguage && (
             <button className="toggle-menu-btn" onClick={toggleMenu}>
               {menuVisible ? t.hideMenu : t.showMenu}
             </button>

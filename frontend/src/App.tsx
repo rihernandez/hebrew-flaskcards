@@ -108,6 +108,18 @@ function App() {
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
 
+  // Word of the day
+  const [wordOfDay, setWordOfDay] = useState<Word | null>(null);
+  const [wordOfDayFlipped, setWordOfDayFlipped] = useState(false);
+
+  // Word of the day: flip to back after 3s, close after 5s more
+  useEffect(() => {
+    if (!wordOfDay) return;
+    const flipTimer = setTimeout(() => setWordOfDayFlipped(true), 3000);
+    const closeTimer = setTimeout(() => setWordOfDay(null), 8000);
+    return () => { clearTimeout(flipTimer); clearTimeout(closeTimer); };
+  }, [wordOfDay?.id]);
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('darkMode', String(darkMode));
@@ -130,11 +142,32 @@ function App() {
     document.documentElement.lang = uiLanguage;
   }, [uiRTL, uiLanguage]);
 
-  // Load JSON on mount
+  // Load JSON on mount + word of the day
   useEffect(() => {
     loadAllWords().then(data => {
       setAllWords(data);
       setLanguages(getLanguages(data));
+
+      // Word of the day logic — show only once per day
+      const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+      const storedDate = localStorage.getItem('wod_date');
+      const storedId   = localStorage.getItem('wod_id');
+      const seenToday  = localStorage.getItem('wod_seen') === today;
+
+      if (!seenToday) {
+        let wod: Word | undefined;
+        if (storedDate === today && storedId) {
+          wod = data.find((w: Word) => w.id === storedId);
+        }
+        if (!wod) {
+          const pool = data.filter((w: Word) => !['Gramática', 'Raíz'].includes(w.topic));
+          wod = pool[Math.floor(Math.random() * pool.length)];
+          localStorage.setItem('wod_date', today);
+          localStorage.setItem('wod_id', wod.id);
+        }
+        localStorage.setItem('wod_seen', today);
+        setWordOfDay(wod);
+      }
     });
   }, []);
 
@@ -708,6 +741,31 @@ function App() {
 
       {searchWord && (
         <WordModal word={searchWord} onClose={() => setSearchWord(null)} />
+      )}
+
+      {/* Word of the Day modal */}
+      {wordOfDay && (
+        <div className="wod-overlay" onClick={() => setWordOfDay(null)}>
+          <div className="wod-modal" onClick={e => e.stopPropagation()}>
+            <div className="wod-label">✨ Palabra del día</div>
+            <div className={`wod-card ${wordOfDayFlipped ? 'flipped' : ''}`}>
+              <div className="wod-front">
+                <span className="wod-word">{wordOfDay.word}</span>
+                {wordOfDay.genre && <span className="wod-genre">({wordOfDay.genre})</span>}
+              </div>
+              <div className="wod-back">
+                <p className="wod-pronunciation">({wordOfDay.pronunciation})</p>
+                <p className="wod-meaning">{wordOfDay.meaning}</p>
+                <ul className="wod-examples">
+                  {wordOfDay.examples.slice(0, 2).map((ex, i) => <li key={i}>{ex}</li>)}
+                </ul>
+              </div>
+            </div>
+            <button className="wod-close-btn" onClick={() => setWordOfDay(null)}>
+              Empezar →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

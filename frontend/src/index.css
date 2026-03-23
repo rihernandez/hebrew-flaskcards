@@ -2463,3 +2463,172 @@ html.dark .update-banner {
 html.dark .mode-divider { color: #555; }
 html.dark .mode-divider::before,
 html.dark .mode-divider::after { background: #3a3a5c; }
+
+/* ===== Word of the Day modal ===== */
+.wod-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11000;
+  animation: fadeIn 0.4s ease;
+}
+
+.wod-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 36px 32px 28px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  max-width: 420px;
+  width: 90vw;
+  animation: wodSlideIn 0.4s ease;
+}
+
+@keyframes wodSlideIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wod-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #764ba2;
+}
+
+/* 3D flip card */
+.wod-card {
+  width: 100%;
+  height: 220px;
+  perspective: 900px;
+}
+
+.wod-card .wod-front,
+.wod-card .wod-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.wod-card {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s ease;
+}
+
+.wod-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.wod-front {
+  background: white;
+  border: 2px solid #e0e7ff;
+}
+
+.wod-back {
+  background: #667eea;
+  color: white;
+  transform: rotateY(180deg);
+  overflow-y: auto;
+}
+
+.wod-word {
+  font-size: 56px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.wod-genre {
+  font-size: 14px;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 6px;
+}
+
+.wod-pronunciation {
+  font-size: 18px;
+  font-style: italic;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.wod-meaning {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.wod-examples {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+}
+
+.wod-examples li {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 5px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.wod-close-btn {
+  padding: 12px 40px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.wod-close-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* Dark mode */
+html.dark .wod-modal {
+  background: var(--surface);
+  color: var(--text);
+}
+
+html.dark .wod-label { color: #a78bfa; }
+
+html.dark .wod-front {
+  background: var(--surface2);
+  border-color: #3a3a5c;
+}
+
+html.dark .wod-word { color: var(--text); }
+
+html.dark .wod-back { background: #4c1d95; }
+
+@media (max-width: 480px) {
+  .wod-modal { padding: 28px 20px 22px; }
+  .wod-word { font-size: 42px; }
+  .wod-meaning { font-size: 22px; }
+  .wod-card { height: 200px; }
+}

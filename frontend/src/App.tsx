@@ -5,6 +5,8 @@ import Flashcard from './components/Flashcard';
 import GrammarCard from './components/GrammarCard';
 import { translations, getUILanguage, isRTL, type Language } from './i18n/translations';
 import GuidesMenu from './components/GuidesMenu';
+import SearchBar from './components/SearchBar';
+import WordModal from './components/WordModal';
 
 interface Word {
   id: string;
@@ -87,6 +89,9 @@ function App() {
   // Countdown state
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownNumber, setCountdownNumber] = useState<number | string>(3);
+
+  // Search
+  const [searchWord, setSearchWord] = useState<Word | null>(null);
 
   // Determinar el idioma de la UI basado en el idioma de aprendizaje
   const uiLanguage: Language = selectedLanguage ? getUILanguage(selectedLanguage) : 'es';
@@ -395,6 +400,13 @@ function App() {
           <h1 onClick={handleTitleClick} style={{ cursor: 'pointer', margin: 0 }}>{t.title}</h1>
           <span style={{ fontSize: '0.6rem', color: '#666', letterSpacing: '0.04em', marginTop: '2px' }}>— Richard HC</span>
         </div>
+        {allWords.length > 0 && (
+          <SearchBar
+            allWords={allWords}
+            onSelect={w => setSearchWord(w)}
+            placeholder="🔍 Buscar por significado..."
+          />
+        )}
         <div className="header-right">
           {words.length > 0 && (
             <button className="toggle-menu-btn" onClick={toggleMenu}>
@@ -541,6 +553,10 @@ function App() {
           )}
         </div>
       </div>
+
+      {searchWord && (
+        <WordModal word={searchWord} onClose={() => setSearchWord(null)} />
+      )}
     </div>
   );
 }

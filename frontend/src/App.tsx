@@ -131,7 +131,7 @@ function App() {
   const uiRTL = isRTL(uiLanguage);
   
   // Detectar si corre dentro de Tauri
-  const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI__;
+  const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
   
   // Determinar si el idioma de aprendizaje es RTL
   const learningRTL = selectedLanguage === 'Hebreo';

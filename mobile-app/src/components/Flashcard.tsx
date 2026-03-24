@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Word } from '../types/Word';
+import { isFavorite, toggleFavorite } from '../utils/favorites';
 
 const { width } = Dimensions.get('window');
-// Base de diseño: 390px (iPhone 14). Escala proporcional a la pantalla actual.
 const scale = Math.min(width / 390, 1.8);
 const s = (size: number) => Math.round(size * scale);
 
@@ -25,25 +25,35 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   onFlipComplete
 }) => {
   const [manualFlip, setManualFlip] = useState(false);
+  const [fav, setFav] = useState(false);
   
   const isFlipped = externalFlipped !== undefined ? externalFlipped : manualFlip;
 
+  useEffect(() => {
+    isFavorite(word.language, word.word, word.topic).then(setFav);
+  }, [word.word, word.topic, word.language]);
+
   const handlePress = () => {
     if (lockFlip) return;
-    if (externalFlipped === undefined) {
-      setManualFlip(!manualFlip);
-    }
+    if (externalFlipped === undefined) setManualFlip(!manualFlip);
+  };
+
+  const handleFav = async () => {
+    const next = await toggleFavorite(word.language, word.word, word.topic);
+    setFav(next);
   };
 
   return (
     <TouchableOpacity 
-      style={[
-        styles.container,
-        isFlipped ? styles.containerFlipped : styles.containerFront
-      ]} 
+      style={[styles.container, isFlipped ? styles.containerFlipped : styles.containerFront]} 
       onPress={handlePress}
       activeOpacity={0.9}
     >
+      {/* Favorite button */}
+      <TouchableOpacity style={styles.favBtn} onPress={handleFav} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <Text style={styles.favIcon}>{fav ? '⭐' : '☆'}</Text>
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {!isFlipped ? (
           <View style={styles.front}>
@@ -92,6 +102,10 @@ const styles = StyleSheet.create({
     minHeight: s(200),
     maxHeight: s(380),
   },
+  favBtn: {
+    position: 'absolute', top: s(10), right: s(10), zIndex: 10, padding: s(4),
+  },
+  favIcon: { fontSize: s(22) },
   containerFront: {
     backgroundColor: '#fff',
   },

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { addFocusError } from '../utils/storage';
 
 interface Word {
   id: string;
@@ -53,6 +54,7 @@ export default function WriteMode({ words, translations, onFinish }: WriteModePr
     } else {
       setStatus('wrong');
       setIncorrectCount(c => c + 1);
+      addFocusError(current.language, current.id);
     }
   };
 
@@ -70,6 +72,7 @@ export default function WriteMode({ words, translations, onFinish }: WriteModePr
   const reveal = () => {
     setStatus('revealed');
     setIncorrectCount(c => c + 1);
+    addFocusError(current.language, current.id);
   };
 
   const handleKey = (e: React.KeyboardEvent) => {

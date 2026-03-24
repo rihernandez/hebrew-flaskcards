@@ -5,7 +5,7 @@ const data: Word[] = flashcardsData as Word[];
 
 export const getLanguages = (): string[] => {
   const languages = [...new Set(data.map(w => w.language))];
-  return languages.filter(lang => lang === 'Hebreo');
+  return languages.filter(lang => lang === 'Hebreo' || lang === 'Español');
 };
 
 export const getTopics = (language: string): string[] => {

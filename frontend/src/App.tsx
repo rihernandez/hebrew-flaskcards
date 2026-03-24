@@ -9,7 +9,7 @@ import SearchBar from './components/SearchBar';
 import WordModal from './components/WordModal';
 import WriteMode from './components/WriteMode';
 import QuizMode from './components/QuizMode';
-import { addFocusError, getFavorites, getFocusErrors } from './utils/storage';
+import { addFocusError, getFavorites, getFocusErrors, updateStreak } from './utils/storage';
 import UpdateChecker from './components/UpdateChecker';
 
 interface Word {
@@ -107,6 +107,13 @@ function App() {
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  // Streak
+  const [streak, setStreak] = useState(0);
+  useEffect(() => {
+    const s = updateStreak();
+    setStreak(s.currentStreak);
+  }, []);
 
   // Word of the day
   const [wordOfDay, setWordOfDay] = useState<Word | null>(null);
@@ -523,6 +530,11 @@ function App() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
           <h1 onClick={handleTitleClick} style={{ cursor: 'pointer', margin: 0 }}>{t.title}</h1>
           <span style={{ fontSize: '0.6rem', color: '#666', letterSpacing: '0.04em', marginTop: '2px' }}>— Richard HC</span>
+          {streak > 0 && (
+            <span style={{ fontSize: '0.75rem', color: '#ff9800', fontWeight: 700, marginTop: '2px' }} title="Racha diaria">
+              🔥 {streak} {streak === 1 ? 'día' : 'días'}
+            </span>
+          )}
         </div>
         {allWords.length > 0 && (
           <SearchBar

@@ -8,7 +8,7 @@ export interface Word {
   topic: string;
 }
 
-export type Language = 'es' | 'en';
+export type Language = 'es' | 'en' | 'he';
 
 export interface Translations {
   title: string;
@@ -33,4 +33,10 @@ export interface Translations {
   correctWords: string;
   incorrectWords: string;
   totalWords: string;
+  practice: string;
+  writing: string;
+  quiz: string;
+  backOnly: string;
+  favorites: string;
+  reviewErrors: string;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { addFocusError } from '../utils/storage';
 
 interface Word {
   id: string;
@@ -49,8 +50,12 @@ export default function QuizMode({ words, allWords, translations, onFinish }: Qu
   const handleSelect = (word: Word) => {
     if (selected !== null) return;
     setSelected(word.id);
-    if (word.id === current.id) setCorrectCount(c => c + 1);
-    else setIncorrectCount(c => c + 1);
+    if (word.id === current.id) {
+      setCorrectCount(c => c + 1);
+    } else {
+      setIncorrectCount(c => c + 1);
+      addFocusError(current.language, current.id);
+    }
   };
 
   const next = () => {

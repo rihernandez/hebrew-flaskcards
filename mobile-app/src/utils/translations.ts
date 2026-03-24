@@ -24,6 +24,42 @@ export const translations: Record<Language, Translations> = {
     correctWords: 'Palabras correctas: {count}',
     incorrectWords: 'Palabras incorrectas: {count}',
     totalWords: 'Total: {count}',
+    practice: 'PRÁCTICA',
+    writing: 'Escritura',
+    quiz: 'Quiz',
+    backOnly: 'Solo reverso',
+    favorites: 'Favoritos',
+    reviewErrors: 'Repasar errores',
+  },
+  he: {
+    title: 'כרטיסיות ספרדית',
+    selectLanguage: 'בחר שפה',
+    showMenu: 'הצג תפריט',
+    hideMenu: 'הסתר תפריט',
+    previous: 'הקודם',
+    next: 'הבא',
+    examples: 'דוגמאות',
+    blitzMode: 'מצב בליץ',
+    bulletMode: 'מצב בולט',
+    focusMode: 'מצב פוקוס',
+    pause: 'השהה',
+    stop: 'עצור',
+    correct: 'נכון',
+    incorrect: 'לא נכון',
+    completed: 'הושלם!',
+    reviewedWords: 'סקרת {count} מילים',
+    restart: 'התחל מחדש',
+    noWords: 'אין מילים זמינות',
+    focusSummary: 'סיכום מצב פוקוס',
+    correctWords: 'מילים נכונות: {count}',
+    incorrectWords: 'מילים שגויות: {count}',
+    totalWords: 'סה"כ: {count}',
+    practice: 'תרגול',
+    writing: 'כתיבה',
+    quiz: 'חידון',
+    backOnly: 'צד אחורי בלבד',
+    favorites: 'מועדפים',
+    reviewErrors: 'סקור שגיאות',
   },
   en: {
     title: 'Hebrew Flashcards',
@@ -48,11 +84,42 @@ export const translations: Record<Language, Translations> = {
     correctWords: 'Correct words: {count}',
     incorrectWords: 'Incorrect words: {count}',
     totalWords: 'Total: {count}',
+    practice: 'PRACTICE',
+    writing: 'Writing',
+    quiz: 'Quiz',
+    backOnly: 'Back side only',
+    favorites: 'Favorites',
+    reviewErrors: 'Review errors',
   },
 };
 
+// Topic name translations to Hebrew (for when user is learning Spanish)
+export const topicTranslations: Record<string, string> = {
+  'Alfabeto': 'אלפבית',
+  'Números': 'מספרים',
+  'Cardinales': 'מספרים סודרים',
+  'Preposiciones y artículos': 'מילות יחס וסתמים',
+  'Pronombres': 'כינויי גוף',
+  'Adverbios': 'תארי פועל',
+  'Locuciones adverbiales': 'ביטויי תואר',
+  'Adjetivos': 'שמות תואר',
+  'Sustantivos': 'שמות עצם',
+  'Verbos': 'פעלים',
+  'Raíz': 'שורש',
+  'Vocabulario': 'אוצר מילים',
+  'Slang': 'סלנג',
+  'Frases útiles': 'ביטויים שימושיים',
+  'Expresiones Idiomáticas (Nivim)': 'ביטויים אידיומטיים',
+  'Gramática': 'דקדוק',
+};
+
 export const getUILanguage = (learningLanguage: string): Language => {
-  return learningLanguage === 'Hebreo' ? 'es' : 'en';
+  // The UI language is the opposite of what the user is learning
+  // Learning Hebrew → UI in Spanish (native speaker is Spanish)
+  // Learning Spanish → UI in Hebrew (native speaker is Hebrew)
+  if (learningLanguage === 'Hebreo') return 'es';
+  if (learningLanguage === 'Español') return 'he';
+  return 'es';
 };
 
 export const isRTL = (language: string): boolean => {

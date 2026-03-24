@@ -49,3 +49,41 @@ export const getTopicProgress = (lang: string, topicWordIds: string[]): number =
   }
   return topicWordIds.filter(id => seen.has(id)).length;
 };
+
+// ── Racha diaria ────────────────────────────────────────────
+interface StreakData {
+  currentStreak: number;
+  lastOpenDate: string; // YYYY-MM-DD
+  longestStreak: number;
+}
+
+const STREAK_KEY = 'streak_data';
+const today = () => new Date().toISOString().split('T')[0];
+const daysBetween = (a: string, b: string) =>
+  Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+
+export const updateStreak = (): StreakData => {
+  const t = today();
+  const raw = localStorage.getItem(STREAK_KEY);
+  if (!raw) {
+    const data: StreakData = { currentStreak: 1, lastOpenDate: t, longestStreak: 1 };
+    localStorage.setItem(STREAK_KEY, JSON.stringify(data));
+    return data;
+  }
+  const data: StreakData = JSON.parse(raw);
+  if (data.lastOpenDate === t) return data;
+  const diff = daysBetween(data.lastOpenDate, t);
+  const newStreak = diff === 1 ? data.currentStreak + 1 : 1;
+  const updated: StreakData = {
+    currentStreak: newStreak,
+    lastOpenDate: t,
+    longestStreak: Math.max(newStreak, data.longestStreak),
+  };
+  localStorage.setItem(STREAK_KEY, JSON.stringify(updated));
+  return updated;
+};
+
+export const getStreak = (): StreakData => {
+  const raw = localStorage.getItem(STREAK_KEY);
+  return raw ? JSON.parse(raw) : { currentStreak: 0, lastOpenDate: '', longestStreak: 0 };
+};

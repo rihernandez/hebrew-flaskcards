@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef, ReactNode } from 'react';
-import html2canvas from 'html2canvas';
+import { useState, useEffect, ReactNode } from 'react';
 import { isFavorite, toggleFavorite } from '../utils/storage';
 
 interface FlashcardProps {
@@ -21,7 +20,6 @@ export default function Flashcard({ id, word, pronunciation, meaning, examples, 
   const [manualFlip, setManualFlip] = useState(false);
   const [toast, setToast] = useState(false);
   const [fav, setFav] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Sync fav state whenever the card changes
   useEffect(() => { setFav(isFavorite(id)); }, [id]);
@@ -40,21 +38,22 @@ export default function Flashcard({ id, word, pronunciation, meaning, examples, 
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!cardRef.current) return;
+    const text = `${word} — ${meaning}\n(${pronunciation})\n${examples.join(' | ')}`;
     try {
-      const canvas = await html2canvas(cardRef.current, { useCORS: true, scale: 2 });
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        setToast(true);
-        setTimeout(() => setToast(false), 2500);
-      }, 'image/png');
-    } catch {
-      const text = `${word} — ${meaning}\n(${pronunciation})\n${examples.join(' | ')}`;
       await navigator.clipboard.writeText(text);
-      setToast(true);
-      setTimeout(() => setToast(false), 2500);
+    } catch {
+      // fallback para contextos sin clipboard API
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
     }
+    setToast(true);
+    setTimeout(() => setToast(false), 2500);
   };
 
   const showBack = isFlipped || manualFlip;
@@ -73,7 +72,6 @@ export default function Flashcard({ id, word, pronunciation, meaning, examples, 
       </button>
 
       <div
-        ref={cardRef}
         className={`flashcard ${showBack ? 'flipped' : ''} ${learningRTL ? 'learning-rtl' : 'learning-ltr'}`}
         onClick={handleClick}
       >

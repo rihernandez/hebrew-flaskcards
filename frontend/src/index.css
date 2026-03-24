@@ -1903,8 +1903,9 @@ html.dark .dark-mode-btn:hover {
   font-size: 13px;
   white-space: nowrap;
   z-index: 100;
-  animation: toastIn 0.3s ease;
+  pointer-events: none;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: toastLife 2.5s ease forwards;
 }
 
 html.dark .share-toast {
@@ -1912,9 +1913,11 @@ html.dark .share-toast {
   color: #1a1a2e;
 }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+@keyframes toastLife {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
 }
 
 /* ===== Write Mode ===== */

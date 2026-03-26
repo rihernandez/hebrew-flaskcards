@@ -39,4 +39,5 @@ export interface Translations {
   backOnly: string;
   favorites: string;
   reviewErrors: string;
+  searchPlaceholder: string;
 }

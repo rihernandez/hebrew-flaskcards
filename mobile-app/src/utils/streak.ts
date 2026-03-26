@@ -1,10 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { stateApi } from './stateApi';
 
 const STREAK_KEY = 'streak_data';
 
 interface StreakData {
   currentStreak: number;
-  lastOpenDate: string; // YYYY-MM-DD
+  lastOpenDate: string;
   longestStreak: number;
 }
 
@@ -16,29 +16,33 @@ const daysBetween = (a: string, b: string) => {
 };
 
 export const updateStreak = async (): Promise<StreakData> => {
-  const raw = await AsyncStorage.getItem(STREAK_KEY);
+  const data = await stateApi.get<StreakData | null>('progression-state', STREAK_KEY, null);
   const t = today();
 
-  if (!raw) {
-    const data: StreakData = { currentStreak: 1, lastOpenDate: t, longestStreak: 1 };
-    await AsyncStorage.setItem(STREAK_KEY, JSON.stringify(data));
-    return data;
+  if (!data) {
+    const created: StreakData = { currentStreak: 1, lastOpenDate: t, longestStreak: 1 };
+    await stateApi.set('progression-state', STREAK_KEY, created);
+    return created;
   }
 
-  const data: StreakData = JSON.parse(raw);
-
-  if (data.lastOpenDate === t) return data; // already counted today
+  if (data.lastOpenDate === t) return data;
 
   const diff = daysBetween(data.lastOpenDate, t);
   const newStreak = diff === 1 ? data.currentStreak + 1 : 1;
-  const longest = Math.max(newStreak, data.longestStreak);
-  const updated: StreakData = { currentStreak: newStreak, lastOpenDate: t, longestStreak: longest };
-  await AsyncStorage.setItem(STREAK_KEY, JSON.stringify(updated));
+  const updated: StreakData = {
+    currentStreak: newStreak,
+    lastOpenDate: t,
+    longestStreak: Math.max(newStreak, data.longestStreak),
+  };
+
+  await stateApi.set('progression-state', STREAK_KEY, updated);
   return updated;
 };
 
 export const getStreak = async (): Promise<StreakData> => {
-  const raw = await AsyncStorage.getItem(STREAK_KEY);
-  if (!raw) return { currentStreak: 0, lastOpenDate: '', longestStreak: 0 };
-  return JSON.parse(raw);
+  return stateApi.get<StreakData>('progression-state', STREAK_KEY, {
+    currentStreak: 0,
+    lastOpenDate: '',
+    longestStreak: 0,
+  });
 };

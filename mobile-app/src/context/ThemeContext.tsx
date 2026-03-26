@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { stateApi } from '../utils/stateApi';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -45,15 +45,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem('darkMode').then(val => {
-      if (val === 'true') setDarkMode(true);
-    });
+    stateApi.get<boolean>('preferences', 'darkMode', false).then(setDarkMode);
   }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(prev => {
       const next = !prev;
-      AsyncStorage.setItem('darkMode', String(next));
+      stateApi.set('preferences', 'darkMode', next).catch(() => {});
       return next;
     });
   };

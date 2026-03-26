@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Word } from '../types/Word';
 import { isFavorite, toggleFavorite } from '../utils/favorites';
+import { getMastery } from '../utils/srs';
 
 const { width } = Dimensions.get('window');
 const scale = Math.min(width / 390, 1.8);
@@ -26,11 +27,14 @@ export const Flashcard: React.FC<FlashcardProps> = ({
 }) => {
   const [manualFlip, setManualFlip] = useState(false);
   const [fav, setFav] = useState(false);
+  const [mastery, setMastery] = useState(0);
   
   const isFlipped = externalFlipped !== undefined ? externalFlipped : manualFlip;
 
   useEffect(() => {
+    const wk = `${word.language}_${word.word}_${word.topic}`;
     isFavorite(word.language, word.word, word.topic).then(setFav);
+    getMastery(wk).then(setMastery);
   }, [word.word, word.topic, word.language]);
 
   const handlePress = () => {
@@ -53,6 +57,13 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       <TouchableOpacity style={styles.favBtn} onPress={handleFav} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
         <Text style={styles.favIcon}>{fav ? '⭐' : '☆'}</Text>
       </TouchableOpacity>
+
+      {/* Mastery stars */}
+      <View style={styles.masteryRow}>
+        {[1,2,3,4,5].map(i => (
+          <Text key={i} style={[styles.masteryStar, { color: i <= mastery ? '#f6c90e' : (isFlipped ? 'rgba(255,255,255,0.3)' : '#ddd') }]}>★</Text>
+        ))}
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {!isFlipped ? (
@@ -106,6 +117,11 @@ const styles = StyleSheet.create({
     position: 'absolute', top: s(10), right: s(10), zIndex: 10, padding: s(4),
   },
   favIcon: { fontSize: s(22) },
+  masteryRow: {
+    position: 'absolute', bottom: s(10), left: s(12),
+    flexDirection: 'row', gap: s(2),
+  },
+  masteryStar: { fontSize: s(12) },
   containerFront: {
     backgroundColor: '#fff',
   },

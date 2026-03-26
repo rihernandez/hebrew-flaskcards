@@ -11,9 +11,10 @@ const s = (size: number) => Math.round(size * scale);
 
 interface SearchBarProps {
   allWords: Word[];
+  placeholder?: string;
 }
 
-export const SearchBar: React.FC<SearchBarProps> = ({ allWords }) => {
+export const SearchBar: React.FC<SearchBarProps> = ({ allWords, placeholder }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Word[]>([]);
   const [selected, setSelected] = useState<Word | null>(null);
@@ -44,7 +45,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ allWords }) => {
         style={styles.input}
         value={query}
         onChangeText={handleChange}
-        placeholder="🔍 Buscar por significado..."
+        placeholder={placeholder ?? '🔍 Search...'}
         placeholderTextColor="#aaa"
         autoCorrect={false}
         autoCapitalize="none"

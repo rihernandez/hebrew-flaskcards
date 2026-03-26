@@ -30,6 +30,7 @@ export const translations: Record<Language, Translations> = {
     backOnly: 'Solo reverso',
     favorites: 'Favoritos',
     reviewErrors: 'Repasar errores',
+    searchPlaceholder: '🔍 Buscar por significado...',
   },
   he: {
     title: 'כרטיסיות ספרדית',
@@ -60,6 +61,7 @@ export const translations: Record<Language, Translations> = {
     backOnly: 'צד אחורי בלבד',
     favorites: 'מועדפים',
     reviewErrors: 'סקור שגיאות',
+    searchPlaceholder: '🔍 חפש לפי משמעות...',
   },
   en: {
     title: 'Hebrew Flashcards',
@@ -90,6 +92,7 @@ export const translations: Record<Language, Translations> = {
     backOnly: 'Back side only',
     favorites: 'Favorites',
     reviewErrors: 'Review errors',
+    searchPlaceholder: '🔍 Search by meaning...',
   },
 };
 
@@ -120,6 +123,14 @@ export const getUILanguage = (learningLanguage: string): Language => {
   if (learningLanguage === 'Hebreo') return 'es';
   if (learningLanguage === 'Español') return 'he';
   return 'es';
+};
+
+// Derive UI language from the user's NATIVE language (what they speak)
+export const getUILanguageFromNative = (nativeLanguage: string): Language => {
+  if (nativeLanguage === 'Hebreo') return 'he';
+  if (nativeLanguage === 'Español') return 'es';
+  if (nativeLanguage === 'Inglés') return 'en';
+  return 'he'; // default: Hebrew (app is for Israelis)
 };
 
 export const isRTL = (language: string): boolean => {

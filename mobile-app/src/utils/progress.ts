@@ -1,30 +1,31 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { stateApi } from './stateApi';
 
 const key = (language: string, topic: string) => `seen_${language}_${topic}`;
 
 export const getSeenCount = async (language: string, topic: string): Promise<number> => {
-  const val = await AsyncStorage.getItem(key(language, topic));
-  if (!val) return 0;
-  return JSON.parse(val).length;
+  const seen = await stateApi.get<string[]>('learning-state', key(language, topic), []);
+  return seen.length;
 };
 
 export const markWordSeen = async (language: string, topic: string, wordKey: string) => {
   const k = key(language, topic);
-  const val = await AsyncStorage.getItem(k);
-  const seen: string[] = val ? JSON.parse(val) : [];
+  const seen = await stateApi.get<string[]>('learning-state', k, []);
   if (!seen.includes(wordKey)) {
     seen.push(wordKey);
-    await AsyncStorage.setItem(k, JSON.stringify(seen));
+    await stateApi.set('learning-state', k, seen);
   }
 };
 
-// Load all seen counts for multiple topics at once
 export const getAllSeenCounts = async (language: string, topics: string[]): Promise<Record<string, number>> => {
   const keys = topics.map(t => key(language, t));
-  const pairs = await AsyncStorage.multiGet(keys);
+  const fallback = Object.fromEntries(keys.map(k => [k, [] as string[]])) as Record<string, string[]>;
+  const values = await stateApi.bulkGet<Record<string, string[]>>('learning-state', keys, fallback);
+
   const result: Record<string, number> = {};
-  pairs.forEach(([, val], i) => {
-    result[topics[i]] = val ? JSON.parse(val).length : 0;
+  topics.forEach((topic) => {
+    const arr = values[key(language, topic)] ?? [];
+    result[topic] = arr.length;
   });
+
   return result;
 };

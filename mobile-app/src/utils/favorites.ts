@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { stateApi } from './stateApi';
 
 const KEY = 'favorites';
 
@@ -6,8 +6,7 @@ const wordKey = (language: string, word: string, topic: string) =>
   `${language}_${word}_${topic}`;
 
 export const getFavorites = async (): Promise<string[]> => {
-  const raw = await AsyncStorage.getItem(KEY);
-  return raw ? JSON.parse(raw) : [];
+  return stateApi.get<string[]>('learning-state', KEY, []);
 };
 
 export const isFavorite = async (language: string, word: string, topic: string): Promise<boolean> => {
@@ -21,11 +20,10 @@ export const toggleFavorite = async (language: string, word: string, topic: stri
   const idx = favs.indexOf(k);
   if (idx >= 0) {
     favs.splice(idx, 1);
-    await AsyncStorage.setItem(KEY, JSON.stringify(favs));
+    await stateApi.set('learning-state', KEY, favs);
     return false;
-  } else {
-    favs.push(k);
-    await AsyncStorage.setItem(KEY, JSON.stringify(favs));
-    return true;
   }
+  favs.push(k);
+  await stateApi.set('learning-state', KEY, favs);
+  return true;
 };

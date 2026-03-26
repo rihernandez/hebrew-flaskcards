@@ -2,31 +2,41 @@ import React, { useEffect, useState } from 'react';
 import {
   Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions, Animated,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Word } from '../types/Word';
+import { Word, Language } from '../types/Word';
 import { useTheme } from '../context/ThemeContext';
+import { translations } from '../utils/translations';
+import { stateApi } from '../utils/stateApi';
 
 const { width } = Dimensions.get('window');
 const s = (n: number) => Math.round(n * Math.min(width / 390, 1.8));
 
+const wodLabels: Record<Language, { label: string; btn: string }> = {
+  he: { label: '✨ מילת היום',   btn: 'התחל ←' },
+  es: { label: '✨ Palabra del día', btn: 'Empezar →' },
+  en: { label: '✨ Word of the day', btn: 'Start →' },
+};
+
 interface Props {
   allWords: Word[];
+  uiLanguage: Language;
 }
 
-export const WordOfDay: React.FC<Props> = ({ allWords }) => {
+export const WordOfDay: React.FC<Props> = ({ allWords, uiLanguage }) => {
   const { colors } = useTheme();
   const [word, setWord] = useState<Word | null>(null);
   const [flipped, setFlipped] = useState(false);
   const flipAnim = new Animated.Value(0);
+  const lbl = wodLabels[uiLanguage] ?? wodLabels.he;
 
   useEffect(() => {
     if (allWords.length === 0) return;
     const today = new Date().toISOString().slice(0, 10);
 
-    AsyncStorage.multiGet(['wod_seen', 'wod_date', 'wod_id']).then(pairs => {
-      const seen   = pairs[0][1];
-      const date   = pairs[1][1];
-      const id     = pairs[2][1];
+    Promise.all([
+      stateApi.get<string>('preferences', 'wod_seen', ''),
+      stateApi.get<string>('preferences', 'wod_date', ''),
+      stateApi.get<string>('preferences', 'wod_id', ''),
+    ]).then(([seen, date, id]) => {
 
       if (seen === today) return; // ya se mostró hoy
 
@@ -39,10 +49,13 @@ export const WordOfDay: React.FC<Props> = ({ allWords }) => {
       if (!wod) {
         wod = pool[Math.floor(Math.random() * pool.length)];
         const wodId = `${wod.word}_${wod.topic}`;
-        AsyncStorage.multiSet([['wod_date', today], ['wod_id', wodId]]);
+        stateApi.bulkSet('preferences', [
+          { key: 'wod_date', value: today },
+          { key: 'wod_id', value: wodId },
+        ]).catch(() => {});
       }
 
-      AsyncStorage.setItem('wod_seen', today);
+      stateApi.set('preferences', 'wod_seen', today).catch(() => {});
       setWord(wod);
     });
   }, [allWords.length]);
@@ -64,7 +77,7 @@ export const WordOfDay: React.FC<Props> = ({ allWords }) => {
     <Modal transparent animationType="fade" visible={!!word}>
       <View style={styles.overlay}>
         <View style={[styles.modal, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.label, { color: colors.primary }]}>✨ Palabra del día</Text>
+          <Text style={[styles.label, { color: colors.primary }]}>{lbl.label}</Text>
 
           <View style={[styles.card, flipped
             ? { backgroundColor: colors.cardBack }
@@ -90,7 +103,7 @@ export const WordOfDay: React.FC<Props> = ({ allWords }) => {
             style={[styles.btn, { backgroundColor: colors.primary }]}
             onPress={() => setWord(null)}
           >
-            <Text style={styles.btnText}>Empezar →</Text>
+            <Text style={styles.btnText}>{lbl.btn}</Text>
           </TouchableOpacity>
         </View>
       </View>

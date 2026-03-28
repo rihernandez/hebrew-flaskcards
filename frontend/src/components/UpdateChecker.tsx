@@ -23,10 +23,21 @@ export default function UpdateChecker() {
   }, []);
 
   useEffect(() => {
-    if (status !== 'available') {
-      // keep tooltip visible while installing, otherwise hide it
-      if (status !== 'installing') setShowUpdateNotice(false);
+    if (noticeTimerRef.current) {
+      clearTimeout(noticeTimerRef.current);
+      noticeTimerRef.current = null;
     }
+
+    if (status === 'available') {
+      setShowUpdateNotice(true);
+      noticeTimerRef.current = setTimeout(() => {
+        setShowUpdateNotice(false);
+        noticeTimerRef.current = null;
+      }, 30000);
+      return;
+    }
+
+    setShowUpdateNotice(false);
   }, [status]);
 
   useEffect(() => {
@@ -45,13 +56,6 @@ export default function UpdateChecker() {
   };
 
   const installUpdate = async () => {
-    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
-    setShowUpdateNotice(true);
-    noticeTimerRef.current = setTimeout(() => {
-      setShowUpdateNotice(false);
-      noticeTimerRef.current = null;
-    }, 20000);
-
     setStatus('installing');
     try { await invoke('install_update'); }
     catch { setStatus('available'); }
@@ -83,20 +87,7 @@ export default function UpdateChecker() {
     );
   }
 
-  if (status === 'installing') {
-    return (
-      <div className="update-installing-wrap">
-        <span className="update-status-text">⬇️ מתקין...</span>
-        {showUpdateNotice && (
-          <div className="update-tooltip update-tooltip-floating" role="tooltip">
-            <p className="update-tooltip-text">
-              Debido al desarrollo de la app móvil, esta app solo seguirá recibiendo actualizaciones hasta el 30 de abril 2026
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (status === 'installing') return <span className="update-status-text">⬇️ מתקין...</span>;
   if (status === 'up-to-date') return <span className="update-status-text ok">✓ מעודכן</span>;
 
   return (

@@ -78,9 +78,17 @@ fn speak_spanish_tts(text: String) -> Result<(), String> {
         let script = format!(
             "Add-Type -AssemblyName System.Speech; \
              $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; \
-             $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceGender]::NotSet, \
-             [System.Speech.Synthesis.VoiceAge]::NotSet, 0, \
-             [System.Globalization.CultureInfo]'es-ES'); \
+             $preferred = @('es-ES','es-MX','es-US'); \
+             $selected = $false; \
+             foreach ($culture in $preferred) {{ \
+               $voice = $s.GetInstalledVoices() | Where-Object {{ $_.Enabled -and $_.VoiceInfo.Culture.Name -eq $culture }} | Select-Object -First 1; \
+               if ($voice) {{ $s.SelectVoice($voice.VoiceInfo.Name); $selected = $true; break; }} \
+             }} \
+             if (-not $selected) {{ \
+               $anySpanish = $s.GetInstalledVoices() | Where-Object {{ $_.Enabled -and $_.VoiceInfo.Culture.Name -like 'es-*' }} | Select-Object -First 1; \
+               if ($anySpanish) {{ $s.SelectVoice($anySpanish.VoiceInfo.Name); $selected = $true; }} \
+             }} \
+             if (-not $selected) {{ Write-Error 'NO_SPANISH_VOICE'; exit 2; }} \
              $s.Speak('{}');",
             escaped
         );
@@ -94,7 +102,7 @@ fn speak_spanish_tts(text: String) -> Result<(), String> {
             return Ok(());
         }
 
-        return Err("Windows TTS command failed.".into());
+        return Err("NO_SPANISH_VOICE".into());
     }
 
     #[cfg(target_os = "macos")]

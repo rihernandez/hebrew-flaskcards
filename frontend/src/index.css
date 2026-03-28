@@ -1848,11 +1848,93 @@ header h1:hover {
   color: #444;
 }
 
+/* Voice package help modal */
+.voice-help-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 20, 0.72);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.voice-help-modal {
+  width: min(860px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  background: #ffffff;
+  color: #1f2937;
+  border-radius: 16px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  padding: 24px 24px 18px;
+  line-height: 1.55;
+}
+
+.voice-help-modal h2 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.voice-help-modal h3 {
+  margin: 16px 0 8px;
+  font-size: 20px;
+}
+
+.voice-help-modal p {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.voice-help-packages {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.voice-help-modal ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.voice-help-modal li {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.voice-help-close-btn {
+  margin-top: 14px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #4f46e5;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.voice-help-close-btn:hover {
+  background: #4338ca;
+}
+
 @media (max-width: 480px) {
   .search-bar { max-width: 100%; }
   .word-modal { padding: 30px 20px; }
   .word-modal-word { font-size: 38px; }
   .word-modal-meaning { font-size: 20px; }
+  .voice-help-modal {
+    width: 96vw;
+    padding: 18px 16px 14px;
+  }
+  .voice-help-modal h2 { font-size: 23px; }
+  .voice-help-modal h3 { font-size: 18px; }
+  .voice-help-modal p,
+  .voice-help-modal li { font-size: 15px; }
 }
 
 /* Dark Mode */
@@ -2017,6 +2099,15 @@ html.dark .word-modal,
 html.dark .pdf-modal { background: var(--surface); color: var(--text); }
 html.dark .word-modal-word { color: var(--text); }
 html.dark .word-modal-examples li { background: var(--surface2); color: var(--text); }
+html.dark .voice-help-modal {
+  background: #1b1f2f;
+  color: #f8fafc;
+  border-color: #3a3f55;
+}
+html.dark .voice-help-packages {
+  background: #3a2a1e;
+  border-color: #c08457;
+}
 
 /* Dark mode button */
 .dark-mode-btn {

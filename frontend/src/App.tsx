@@ -23,6 +23,9 @@ interface Word {
   genre?: string;
 }
 
+const TOPIC_BATCH_SIZE = 10;
+const TOPIC_BATCH_PASS_SCORE = 7;
+
 // Load data directly from JSON — no backend needed
 let allWordsCache: Word[] | null = null;
 
@@ -72,6 +75,10 @@ function App() {
   const [languages, setLanguages] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [words, setWords] = useState<Word[]>([]);
+  const [topicWords, setTopicWords] = useState<Word[]>([]);
+  const [topicBatchStart, setTopicBatchStart] = useState(0);
+  const [topicPracticeWords, setTopicPracticeWords] = useState<Word[] | null>(null);
+  const [topicPracticeSummary, setTopicPracticeSummary] = useState<{ correct: number; incorrect: number; passed: boolean } | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -135,6 +142,17 @@ function App() {
   // Determinar el idioma de la UI basado en el idioma de aprendizaje
   const uiLanguage: Language = selectedLanguage ? getUILanguage(selectedLanguage) : 'es';
   const t = translations[uiLanguage];
+  const topicFlowLabels = {
+    practiceNow: uiLanguage === 'he' ? 'תרגל עכשיו' : 'Practicar ahora',
+    nextBlock: uiLanguage === 'he' ? '10 המילים הבאות' : 'Siguientes 10 palabras',
+    retryPractice: uiLanguage === 'he' ? 'תרגל שוב' : 'Practicar otra vez',
+    topicDone: uiLanguage === 'he' ? 'נושא הושלם' : 'Tema completado',
+    unlocked: uiLanguage === 'he' ? 'פתחת את הבלוק הבא' : 'Desbloqueaste el siguiente bloque',
+    needMore: uiLanguage === 'he' ? 'צריך לפחות 7 נכונות כדי להמשיך' : 'Necesitas al menos 7 correctas para continuar',
+    learnedPrompt: uiLanguage === 'he' ? 'בוא נתרגל את מה שלמדת' : 'Vamos a practicar lo aprendido',
+    learnedSub: uiLanguage === 'he' ? 'כשיש לך 7 מתוך 10 נכונות, נפתח את 10 המילים הבאות.' : 'Si aciertas 7 de 10, se desbloquean las siguientes 10 palabras.',
+    progressOfTopic: uiLanguage === 'he' ? 'התקדמות בנושא' : 'Progreso del tema',
+  };
   const uiRTL = isRTL(uiLanguage);
   
   // Detectar si corre dentro de Tauri
@@ -142,6 +160,10 @@ function App() {
   
   // Determinar si el idioma de aprendizaje es RTL
   const learningRTL = selectedLanguage === 'Hebreo';
+  const getTopicBatch = (list: Word[], start: number): Word[] => list.slice(start, start + TOPIC_BATCH_SIZE);
+  const hasTopicFlow = !autoPlayMode && !focusMode && !writeMode && !quizMode && !!selectedTopic && !selectedTopic.includes('Mode') && topicWords.length > 0;
+  const topicBatchEnd = hasTopicFlow ? Math.min(topicBatchStart + words.length, topicWords.length) : words.length;
+  const hasMoreTopicBatches = hasTopicFlow && topicBatchStart + TOPIC_BATCH_SIZE < topicWords.length;
 
   // Aplicar dirección RTL al documento para la UI
   useEffect(() => {
@@ -183,6 +205,10 @@ function App() {
       setTopics(getTopics(allWords, selectedLanguage));
       setSelectedTopic('');
       setWords([]);
+      setTopicWords([]);
+      setTopicBatchStart(0);
+      setTopicPracticeWords(null);
+      setTopicPracticeSummary(null);
       setMenuVisible(true);
       clearShownWords(selectedLanguage, 'blitz');
       clearShownWords(selectedLanguage, 'bullet');
@@ -192,17 +218,25 @@ function App() {
 
   useEffect(() => {
     if (selectedLanguage && selectedTopic && !selectedTopic.includes('Mode') && allWords.length > 0) {
-      const topicWords = getWordsByTopic(allWords, selectedLanguage, selectedTopic);
-      setWords(topicWords);
+      const nextTopicWords = getWordsByTopic(allWords, selectedLanguage, selectedTopic);
+      setTopicWords(nextTopicWords);
+      setTopicBatchStart(0);
+      setTopicPracticeWords(null);
+      setTopicPracticeSummary(null);
+      setWords(getTopicBatch(nextTopicWords, 0));
       setCurrentIndex(0);
       setMenuVisible(false);
       setAutoPlayMode(null);
       setFocusMode(false);
+      setWriteMode(false);
+      setQuizMode(false);
+      setWriteSummary(null);
+      setQuizSummary(null);
       setIsFlipped(backOnlyMode);
       setIsComplete(false);
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     }
-  }, [selectedLanguage, selectedTopic, allWords]);
+  }, [selectedLanguage, selectedTopic, allWords, backOnlyMode]);
 
   // Auto-play effect
   useEffect(() => {
@@ -292,6 +326,17 @@ function App() {
 
   const EXCLUDED_TOPICS = ['Gramática', 'Raíz', 'Frases útiles', 'Expresiones Idiomáticas (Nivim)'];
 
+  const handleTopicChange = (topic: string) => {
+    setSelectedTopic(topic);
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
+    setWriteMode(false);
+    setQuizMode(false);
+    setWriteSummary(null);
+    setQuizSummary(null);
+    setIsComplete(false);
+  };
+
   const getWordsForMode = (): Word[] => {
     const shuffled = allWords
       .filter(w => w.language === selectedLanguage && !EXCLUDED_TOPICS.includes(w.topic))
@@ -302,6 +347,8 @@ function App() {
   const handleBlitzMode = async () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     setMenuVisible(false);
     const pool = getWordsForMode();
     const shownIds = getShownWords(selectedLanguage, 'blitz');
@@ -318,6 +365,8 @@ function App() {
   const handleBulletMode = async () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     setMenuVisible(false);
     const pool = getWordsForMode();
     const shownIds = getShownWords(selectedLanguage, 'bullet');
@@ -334,6 +383,8 @@ function App() {
   const handleFocusMode = async () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     setMenuVisible(false);
     const pool = getWordsForMode();
     const shownIds = getShownWords(selectedLanguage, 'focus');
@@ -356,6 +407,8 @@ function App() {
   const handleWriteMode = () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     setMenuVisible(false);
     const pool = getWordsForMode();
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
@@ -431,6 +484,8 @@ function App() {
   const handleQuizMode = () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     setMenuVisible(false);
     const pool = getWordsForMode();
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
@@ -453,6 +508,8 @@ function App() {
   const handleFavoritesMode = () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     const favIds = getFavorites();
     const favWords = allWords.filter(w => favIds.includes(w.id) && w.language === selectedLanguage);
     if (favWords.length === 0) return;
@@ -467,6 +524,8 @@ function App() {
   const handleErrorsMode = () => {
     if (!selectedLanguage) return;
     stopAutoPlay();
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     const errIds = getFocusErrors(selectedLanguage);
     const errWords = allWords.filter(w => errIds.includes(w.id) && w.language === selectedLanguage);
     if (errWords.length === 0) return;
@@ -480,6 +539,11 @@ function App() {
 
   const handleNext = () => {
     stopAutoPlay();
+    if (hasTopicFlow && currentIndex === words.length - 1) {
+      setTopicPracticeSummary(null);
+      setTopicPracticeWords(words);
+      return;
+    }
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1);
       // En back-only mode (solo temas), mostrar directamente el reverso
@@ -511,11 +575,46 @@ function App() {
     stopWriteMode();
     stopQuizMode();
     setWords([]);
+    setTopicWords([]);
+    setTopicBatchStart(0);
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary(null);
     setSelectedTopic('');
     setCurrentIndex(0);
     setMenuVisible(true);
     setIsComplete(false);
     setIsFlipped(false);
+  };
+
+  const handleTopicPracticeFinish = (correct: number, incorrect: number) => {
+    const needed = Math.min(TOPIC_BATCH_PASS_SCORE, topicPracticeWords?.length ?? TOPIC_BATCH_SIZE);
+    const passed = correct >= needed;
+    setTopicPracticeWords(null);
+    setTopicPracticeSummary({ correct, incorrect, passed });
+  };
+
+  const handleRetryTopicPractice = () => {
+    setTopicPracticeSummary(null);
+    setTopicPracticeWords(words);
+  };
+
+  const handleUnlockNextTopicBatch = () => {
+    const nextStart = topicBatchStart + TOPIC_BATCH_SIZE;
+    const nextBatch = getTopicBatch(topicWords, nextStart);
+    if (nextBatch.length === 0) {
+      setTopicPracticeSummary(null);
+      setWords([]);
+      setSelectedTopic('');
+      setMenuVisible(true);
+      setCurrentIndex(0);
+      setIsFlipped(false);
+      return;
+    }
+    setTopicBatchStart(nextStart);
+    setWords(nextBatch);
+    setCurrentIndex(0);
+    setTopicPracticeSummary(null);
+    setIsFlipped(backOnlyMode);
   };
 
   return (
@@ -590,7 +689,7 @@ function App() {
             <TopicMenu 
               topics={topics}
               selectedTopic={selectedTopic}
-              onTopicChange={setSelectedTopic}
+              onTopicChange={handleTopicChange}
               onFocusMode={handleFocusMode}
               onBlitzMode={handleBlitzMode}
               onBulletMode={handleBulletMode}
@@ -607,8 +706,37 @@ function App() {
         )}
         
         <div className="flashcard-container">
+          {topicPracticeWords && (
+            <QuizMode
+              words={topicPracticeWords}
+              allWords={allWords}
+              translations={t}
+              onFinish={handleTopicPracticeFinish}
+            />
+          )}
+          {topicPracticeSummary && (
+            <div className="focus-summary">
+              <h2>{topicPracticeSummary.passed ? topicFlowLabels.unlocked : topicFlowLabels.needMore}</h2>
+              <div className="stats">
+                <p className="correct-count">{t.correctWords.replace('{count}', topicPracticeSummary.correct.toString())}</p>
+                <p className="incorrect-count">{t.incorrectWords.replace('{count}', topicPracticeSummary.incorrect.toString())}</p>
+                <p className="total-count">
+                  {topicFlowLabels.progressOfTopic}: {topicBatchEnd}/{topicWords.length}
+                </p>
+              </div>
+              {topicPracticeSummary.passed ? (
+                <button onClick={hasMoreTopicBatches ? handleUnlockNextTopicBatch : handleTitleClick} className="restart-btn">
+                  {hasMoreTopicBatches ? `➡️ ${topicFlowLabels.nextBlock}` : `🏁 ${topicFlowLabels.topicDone}`}
+                </button>
+              ) : (
+                <button onClick={handleRetryTopicPractice} className="restart-btn">
+                  🔁 {topicFlowLabels.retryPractice}
+                </button>
+              )}
+            </div>
+          )}
           {/* Write Mode */}
-          {writeMode && !writeSummary && words.length > 0 && (
+          {!topicPracticeWords && !topicPracticeSummary && writeMode && !writeSummary && words.length > 0 && (
             <WriteMode
               words={words}
               translations={t}
@@ -618,7 +746,7 @@ function App() {
               }}
             />
           )}
-          {writeSummary && (
+          {!topicPracticeWords && !topicPracticeSummary && writeSummary && (
             <div className="focus-summary">
               <h2>{t.writeSummary}</h2>
               <div className="stats">
@@ -632,7 +760,7 @@ function App() {
             </div>
           )}
           {/* Quiz Mode */}
-          {quizMode && !quizSummary && words.length > 0 && (
+          {!topicPracticeWords && !topicPracticeSummary && quizMode && !quizSummary && words.length > 0 && (
             <QuizMode
               words={words}
               allWords={allWords}
@@ -643,7 +771,7 @@ function App() {
               }}
             />
           )}
-          {quizSummary && (
+          {!topicPracticeWords && !topicPracticeSummary && quizSummary && (
             <div className="focus-summary">
               <h2>{t.quizSummary}</h2>
               <div className="stats">
@@ -656,7 +784,7 @@ function App() {
               </button>
             </div>
           )}
-          {!writeMode && !writeSummary && !quizMode && !quizSummary && focusShowingSummary ? (            // Mostrar resumen de Focus Mode
+          {!topicPracticeWords && !topicPracticeSummary && !writeMode && !writeSummary && !quizMode && !quizSummary && focusShowingSummary ? (            // Mostrar resumen de Focus Mode
             <div className="focus-summary">
               <h2>{t.focusSummary}</h2>
               <div className="stats">
@@ -668,7 +796,7 @@ function App() {
                 {t.restart}
               </button>
             </div>
-          ) : !writeMode && !writeSummary && !quizMode && !quizSummary && words.length > 0 && !isComplete && (
+          ) : !topicPracticeWords && !topicPracticeSummary && !writeMode && !writeSummary && !quizMode && !quizSummary && words.length > 0 && !isComplete && (
             <>
               {selectedTopic === 'Gramática' ? (
                 // Mostrar GrammarCard para el tema Gramática
@@ -685,15 +813,22 @@ function App() {
                     </button>
                     <span>
                       {currentIndex + 1} / {words.length}
+                      {hasTopicFlow && <span> • {topicBatchStart + 1}-{topicBatchEnd} / {topicWords.length}</span>}
                     </span>
-                    <button onClick={handleNext} disabled={currentIndex === words.length - 1}>
-                      {t.next}
+                    <button onClick={handleNext} disabled={!hasTopicFlow && currentIndex === words.length - 1}>
+                      {hasTopicFlow && currentIndex === words.length - 1 ? topicFlowLabels.practiceNow : t.next}
                     </button>
                   </div>
                 </>
               ) : (
                 // Mostrar Flashcard normal para otros temas
                 <>
+                  {hasTopicFlow && currentIndex === words.length - 1 && (
+                    <div className="focus-summary" style={{ marginBottom: '12px' }}>
+                      <h2>{topicFlowLabels.learnedPrompt}</h2>
+                      <p>{topicFlowLabels.learnedSub}</p>
+                    </div>
+                  )}
                   <Flashcard 
                     {...words[currentIndex]} 
                     isFlipped={isFlipped} 
@@ -720,11 +855,12 @@ function App() {
                     </button>
                     <span>
                       {currentIndex + 1} / {words.length}
+                      {hasTopicFlow && <span> • {topicBatchStart + 1}-{topicBatchEnd} / {topicWords.length}</span>}
                       {autoPlayMode && <span className="mode-indicator"> • {autoPlayMode === 'blitz' ? '⚡ Blitz' : '🚀 Bullet'}</span>}
                       {focusMode && <span className="mode-indicator"> • 🎯 Focus</span>}
                     </span>
-                    <button onClick={handleNext} disabled={currentIndex === words.length - 1 || autoPlayMode !== null || focusMode}>
-                      {t.next}
+                    <button onClick={handleNext} disabled={autoPlayMode !== null || focusMode}>
+                      {hasTopicFlow && currentIndex === words.length - 1 ? topicFlowLabels.practiceNow : t.next}
                     </button>
                     {autoPlayMode && (
                       <button onClick={stopAutoPlay} className="stop-btn">

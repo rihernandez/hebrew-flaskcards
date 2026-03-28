@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getVersion } from '@tauri-apps/api/app';
 
@@ -8,6 +8,8 @@ export default function UpdateChecker() {
   const [status, setStatus] = useState<Status>('idle');
   const [newVersion, setNewVersion] = useState('');
   const [currentVersion, setCurrentVersion] = useState('');
+  const [showUpdateNotice, setShowUpdateNotice] = useState(false);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getVersion().then(v => setCurrentVersion(v)).catch(() => {});
@@ -20,6 +22,19 @@ export default function UpdateChecker() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (status !== 'available') {
+      // keep tooltip visible while installing, otherwise hide it
+      if (status !== 'installing') setShowUpdateNotice(false);
+    }
+  }, [status]);
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    };
+  }, []);
+
   const checkUpdate = async () => {
     setStatus('checking');
     try {
@@ -30,6 +45,13 @@ export default function UpdateChecker() {
   };
 
   const installUpdate = async () => {
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    setShowUpdateNotice(true);
+    noticeTimerRef.current = setTimeout(() => {
+      setShowUpdateNotice(false);
+      noticeTimerRef.current = null;
+    }, 5000);
+
     setStatus('installing');
     try { await invoke('install_update'); }
     catch { setStatus('available'); }
@@ -40,13 +62,41 @@ export default function UpdateChecker() {
       <div className="update-banner">
         <span className="update-new-dot" />
         <span>v{newVersion}</span>
-        <button className="update-install-btn" onClick={installUpdate}>עדכן</button>
-        <button className="update-dismiss-btn" onClick={() => setStatus('idle')}>✕</button>
+        <button className="update-install-btn" onClick={() => void installUpdate()}>עדכן</button>
+        <button
+          className="update-dismiss-btn"
+          onClick={() => {
+            setShowUpdateNotice(false);
+            setStatus('idle');
+          }}
+        >
+          ✕
+        </button>
+        {showUpdateNotice && (
+          <div className="update-tooltip" role="tooltip">
+            <p className="update-tooltip-text">
+              בשל המשך הפיתוח של אפליקציית המובייל, האפליקציה הזו תמשיך לקבל עדכונים רק עד 30 באפריל השנה.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (status === 'installing') return <span className="update-status-text">⬇️ מתקין...</span>;
+  if (status === 'installing') {
+    return (
+      <div className="update-installing-wrap">
+        <span className="update-status-text">⬇️ מתקין...</span>
+        {showUpdateNotice && (
+          <div className="update-tooltip update-tooltip-floating" role="tooltip">
+            <p className="update-tooltip-text">
+              בשל המשך הפיתוח של אפליקציית המובייל, האפליקציה הזו תמשיך לקבל עדכונים רק עד 30 באפריל השנה.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
   if (status === 'up-to-date') return <span className="update-status-text ok">✓ מעודכן</span>;
 
   return (

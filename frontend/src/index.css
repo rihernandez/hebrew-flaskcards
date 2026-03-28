@@ -2575,6 +2575,7 @@ html.dark .update-check-btn:hover:not(:disabled) { background: #7c3aed; color: w
 .update-status-text.ok { color: #4caf50; }
 
 .update-banner {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -2639,6 +2640,63 @@ html.dark .update-banner {
 }
 
 .update-dismiss-btn:hover { color: #666; }
+
+.update-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(340px, 82vw);
+  background: #fff8e1;
+  border: 1px solid #f59e0b;
+  color: #7c2d12;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  padding: 10px 12px;
+  z-index: 20;
+  white-space: normal;
+}
+
+.update-tooltip::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  background: #fff8e1;
+  border-top: 1px solid #f59e0b;
+  border-left: 1px solid #f59e0b;
+  transform: rotate(45deg);
+}
+
+.update-tooltip-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.update-installing-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.update-tooltip-floating {
+  top: calc(100% + 8px);
+  right: 0;
+}
+
+html.dark .update-tooltip {
+  background: #3f2d04;
+  border-color: #fbbf24;
+  color: #fde68a;
+}
+
+html.dark .update-tooltip::before {
+  background: #3f2d04;
+  border-top-color: #fbbf24;
+  border-left-color: #fbbf24;
+}
 
 /* ===== Mode divider ===== */
 .mode-divider {

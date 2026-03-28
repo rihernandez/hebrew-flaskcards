@@ -14,9 +14,10 @@ interface FlashcardProps {
   genre?: string;
   overlayButtons?: ReactNode;
   lockFlip?: boolean;
+  enableSpanishAudio?: boolean;
 }
 
-export default function Flashcard({ id, word, pronunciation, meaning, examples, isFlipped, onFlipComplete, examplesLabel, learningRTL, genre, overlayButtons, lockFlip }: FlashcardProps) {
+export default function Flashcard({ id, word, pronunciation, meaning, examples, isFlipped, onFlipComplete, examplesLabel, learningRTL, genre, overlayButtons, lockFlip, enableSpanishAudio = false }: FlashcardProps) {
   const [manualFlip, setManualFlip] = useState(false);
   const [toast, setToast] = useState(false);
   const [fav, setFav] = useState(false);
@@ -56,6 +57,16 @@ export default function Flashcard({ id, word, pronunciation, meaning, examples, 
     setTimeout(() => setToast(false), 2500);
   };
 
+  const handleSpeakSpanish = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'es-ES';
+    utterance.rate = 0.95;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
   const showBack = isFlipped || manualFlip;
 
   return (
@@ -81,6 +92,11 @@ export default function Flashcard({ id, word, pronunciation, meaning, examples, 
               {word}
               {genre && <span className="genre"> ({genre})</span>}
             </h1>
+            {enableSpanishAudio && (
+              <button className="flashcard-audio-btn" onClick={handleSpeakSpanish} title="Escuchar pronunciación en español">
+                🔊
+              </button>
+            )}
           </div>
           <div className="flashcard-back">
             <p className="pronunciation-back">({pronunciation})</p>

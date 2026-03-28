@@ -79,7 +79,7 @@ export default function UpdateChecker() {
         {showUpdateNotice && (
           <div className="update-tooltip" role="tooltip">
             <p className="update-tooltip-text">
-              בשל פיתוח אפליקציית המובייל, האפליקציה הזו תמשיך לקבל עדכונים רק עד 30 באפריל 2026.
+              עקב פיתוח אפליקציית המובייל, האפליקציה הזו תמשיך לקבל עדכונים רק עד 30 באפריל 2026.
             </p>
           </div>
         )}

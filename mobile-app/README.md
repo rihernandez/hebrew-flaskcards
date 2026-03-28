@@ -1,4 +1,4 @@
-# Hebrew Flashcards Mobile App
+# ZeZe Mobile App
 
 Aplicación móvil offline para aprender hebreo con flashcards. Funciona 100% sin conexión a internet y sin necesidad de backend.
 

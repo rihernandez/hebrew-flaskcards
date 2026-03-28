@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Hebrew Flashcards",
+    "name": "ZeZe",
     "slug": "mobile-app",
     "version": "1.6.0",
     "orientation": "default",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#17133f"
     },
     "ios": {
       "supportsTablet": true
@@ -17,11 +17,12 @@
     "android": {
       "versionCode": 5,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#17133f"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.rhc921004.hebrew.flashcards"
+      "package": "com.rhc921004.zeze"
     },
     "web": {
       "favicon": "./assets/favicon.png"

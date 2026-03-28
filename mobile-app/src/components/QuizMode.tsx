@@ -28,6 +28,13 @@ export const QuizMode: React.FC<Props> = ({ words, allWords, onFinish }) => {
   const [failedWords, setFailedWords] = useState<Word[]>([]);
 
   const current = words[index];
+  if (!current) {
+    return (
+      <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.emptyStateText, { color: colors.text2 }]}>No hay palabras disponibles.</Text>
+      </View>
+    );
+  }
   const wordKey = `${current.word}_${current.topic}`;
 
   const pool = useMemo(
@@ -111,6 +118,8 @@ export const QuizMode: React.FC<Props> = ({ words, allWords, onFinish }) => {
 
 const styles = StyleSheet.create({
   card: { padding: s(20), alignItems: 'center', gap: s(14), flexGrow: 1 },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: s(20) },
+  emptyStateText: { fontSize: s(16), textAlign: 'center' },
   counter: { fontSize: s(12), alignSelf: 'flex-end' },
   word: { fontSize: s(48), fontWeight: 'bold', textAlign: 'center' },
   pronunciation: { fontSize: s(14), fontStyle: 'italic' },

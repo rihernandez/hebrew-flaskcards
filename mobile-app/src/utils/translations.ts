@@ -2,7 +2,7 @@ import { Translations, Language } from '../types/Word';
 
 export const translations: Record<Language, Translations> = {
   es: {
-    title: 'Flashcards Hebreo',
+    title: 'ZeZe',
     selectLanguage: 'Selecciona un idioma',
     showMenu: 'Mostrar menú',
     hideMenu: 'Ocultar menú',
@@ -64,7 +64,7 @@ export const translations: Record<Language, Translations> = {
     searchPlaceholder: '🔍 חפש לפי משמעות...',
   },
   en: {
-    title: 'Hebrew Flashcards',
+    title: 'ZeZe',
     selectLanguage: 'Select a language',
     showMenu: 'Show menu',
     hideMenu: 'Hide menu',

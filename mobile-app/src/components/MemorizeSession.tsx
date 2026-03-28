@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Word, Language } from '../types/Word';
 import { useTheme } from '../context/ThemeContext';
+import { markWordSeen } from '../utils/progress';
 
 const { width } = Dimensions.get('window');
 const s = (n: number) => Math.round(n * Math.min(width / 390, 1.8));
@@ -101,7 +102,7 @@ interface Props {
   yesterdayWords: Word[] | null;
   allWords: Word[];
   uiLanguage: Language;
-  onDone: (correct: number, incorrect: number) => void;
+  onDone: (correct: number, incorrect: number) => Promise<void>;
   onSkip: () => void;
 }
 
@@ -544,7 +545,12 @@ export const MemorizeSession: React.FC<Props> = ({
       </View>
       <TouchableOpacity
         style={[styles.btn, { backgroundColor: '#4caf50', marginTop: s(24) }]}
-        onPress={() => onDone(correct, incorrect)}
+        onPress={async () => {
+          await Promise.all(
+            todayWords.map((word) => markWordSeen(word.language, word.topic, `${word.word}_${word.topic}`))
+          );
+          await onDone(correct, incorrect);
+        }}
       >
         <Text style={styles.btnText}>{t.finish}</Text>
       </TouchableOpacity>

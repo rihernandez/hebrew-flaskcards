@@ -14,11 +14,12 @@ import * as Localization from 'expo-localization';
 import { useTheme } from '../context/ThemeContext';
 import { authApi } from '../utils/apiClient';
 import { UserProfile, saveProfile } from '../utils/userProfile';
+import { UI_LANG_OPTIONS, OnboardingLang } from '../utils/onboardingI18n';
 
 const { width } = Dimensions.get('window');
 const s = (n: number) => Math.round(n * Math.min(width / 390, 1.8));
 
-type UiLang = 'es' | 'en' | 'he';
+type UiLang = OnboardingLang;
 
 const getInitialLang = (): UiLang => {
   const locale = Localization.getLocales()[0]?.languageCode;
@@ -139,7 +140,8 @@ interface Props {
 
 export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onGoToRegister }) => {
   const { colors } = useTheme();
-  const [uiLang] = useState<UiLang>(getInitialLang);
+  const [uiLang, setUiLang] = useState<UiLang>(getInitialLang);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -246,6 +248,32 @@ export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onGoToRegister })
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <View style={styles.uiLangContainer}>
+        <TouchableOpacity
+          style={[styles.uiLangBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => setShowLangPicker(v => !v)}
+        >
+          <Text style={[styles.uiLangBtnText, { color: colors.primary }]}>
+            {UI_LANG_OPTIONS.find(o => o.code === uiLang)?.label} ▾
+          </Text>
+        </TouchableOpacity>
+        {showLangPicker && (
+          <View style={[styles.uiLangDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {UI_LANG_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt.code}
+                style={[styles.uiLangOption, opt.code === uiLang && { backgroundColor: colors.primary + '22' }]}
+                onPress={() => { setUiLang(opt.code); setShowLangPicker(false); }}
+              >
+                <Text style={[styles.uiLangOptionText, { color: opt.code === uiLang ? colors.primary : colors.text }]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text, textAlign: isRTL ? 'right' : 'left' }]}>{t.title}</Text>
         <Text style={[styles.subtitle, { color: colors.text2, textAlign: isRTL ? 'right' : 'left' }]}>{t.subtitle}</Text>
@@ -369,6 +397,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: s(24),
   },
+  uiLangContainer: { position: 'absolute', top: s(28), right: s(16), zIndex: 100 },
+  uiLangBtn: { paddingVertical: s(6), paddingHorizontal: s(12), borderRadius: s(20), borderWidth: 1.5 },
+  uiLangBtnText: { fontSize: s(13), fontWeight: '700' },
+  uiLangDropdown: { position: 'absolute', top: s(36), right: 0, borderRadius: s(10), borderWidth: 1.5, overflow: 'hidden', minWidth: s(60) },
+  uiLangOption: { paddingVertical: s(8), paddingHorizontal: s(14) },
+  uiLangOptionText: { fontSize: s(13), fontWeight: '600', textAlign: 'center' },
   card: {
     borderWidth: 1,
     borderRadius: s(16),

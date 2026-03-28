@@ -28,24 +28,25 @@ type Tab = 'learn' | 'speaking' | 'immersion';
 const SPEAKING_LOCK_DAYS = 30;
 
 const LOCK_LABELS: Record<Language, {
-  locked: string; lockedSub: string; daysLeft: string; unlocked: string;
+  lockedSpeaking: string; lockedImmersion: string; lockedSub: string; daysLeft: string; unlocked: string;
 }> = {
-  he: { locked: '🔒 Speaking נעול', lockedSub: 'השלם את אתגר 30 הימים כדי לפתוח', daysLeft: 'ימים נותרו', unlocked: '🎉 Speaking נפתח!' },
-  es: { locked: '🔒 Speaking bloqueado', lockedSub: 'Completa el reto de 30 días para desbloquearlo', daysLeft: 'días restantes', unlocked: '🎉 ¡Speaking desbloqueado!' },
-  en: { locked: '🔒 Speaking locked', lockedSub: 'Complete the 30-day challenge to unlock it', daysLeft: 'days remaining', unlocked: '🎉 Speaking unlocked!' },
+  he: { lockedSpeaking: '🔒 Speaking נעול', lockedImmersion: '🔒 Comprehension נעול', lockedSub: 'השלם את אתגר 30 הימים כדי לפתוח', daysLeft: 'ימים נותרו', unlocked: '🎉 נפתח!' },
+  es: { lockedSpeaking: '🔒 Speaking bloqueado', lockedImmersion: '🔒 Comprehension bloqueado', lockedSub: 'Completa el reto de 30 días para desbloquearlo', daysLeft: 'días restantes', unlocked: '🎉 ¡Desbloqueado!' },
+  en: { lockedSpeaking: '🔒 Speaking locked', lockedImmersion: '🔒 Comprehension locked', lockedSub: 'Complete the 30-day challenge to unlock it', daysLeft: 'days remaining', unlocked: '🎉 Unlocked!' },
 };
 
-function SpeakingLockScreen({ daysCompleted, uiLanguage, colors }: {
-  daysCompleted: number; uiLanguage: Language; colors: any;
+function LockedFeatureScreen({ daysCompleted, uiLanguage, colors, feature }: {
+  daysCompleted: number; uiLanguage: Language; colors: any; feature: 'speaking' | 'immersion';
 }) {
   const l = LOCK_LABELS[uiLanguage] ?? LOCK_LABELS.es;
   const daysLeft = Math.max(0, SPEAKING_LOCK_DAYS - daysCompleted);
   const progress = Math.min(1, daysCompleted / SPEAKING_LOCK_DAYS);
+  const title = feature === 'speaking' ? l.lockedSpeaking : l.lockedImmersion;
 
   return (
     <View style={[lockStyles.container, { backgroundColor: colors.bg }]}>
       <Text style={lockStyles.lockIcon}>🔒</Text>
-      <Text style={[lockStyles.title, { color: colors.text }]}>{l.locked}</Text>
+      <Text style={[lockStyles.title, { color: colors.text }]}>{title}</Text>
       <Text style={[lockStyles.sub, { color: colors.text2 }]}>{l.lockedSub}</Text>
 
       {/* Progress bar */}
@@ -72,12 +73,14 @@ function AppRoot() {
 
   // Load saved profile once on mount
   useEffect(() => {
-    setAuthView('login');
-    AsyncStorage.clear()
-      .then(() => getProfile())
-      .then(saved => {
-        setProfile(saved);
-      })
+    const loadProfile = async () => {
+      setAuthView('login');
+      await AsyncStorage.clear();
+      const saved = await getProfile();
+      setProfile(saved);
+    };
+
+    loadProfile()
       .finally(() => {
         setProfileLoaded(true);
       });
@@ -153,6 +156,7 @@ function AppRoot() {
   const uiLanguage = getUILanguageFromNative(profile.nativeLanguage);
   const labels = TAB_LABELS[uiLanguage] ?? TAB_LABELS.he;
   const speakingUnlocked = profile.speakingUnlocked;
+  const immersionUnlocked = profile.speakingUnlocked;
 
   return (
     <View style={styles.root}>
@@ -176,7 +180,7 @@ function AppRoot() {
           style={[styles.tab, activeTab === 'immersion' && styles.tabActive]}
           onPress={() => setActiveTab('immersion')}
         >
-          <Text style={styles.tabIcon}>🌍</Text>
+          <Text style={styles.tabIcon}>{immersionUnlocked ? '🌍' : '🔒'}</Text>
           <Text style={styles.tabLabel}>{labels.immersion}</Text>
         </TouchableOpacity>
       </View>
@@ -190,11 +194,15 @@ function AppRoot() {
           {speakingUnlocked ? (
             <SpeakingScreen uiLanguage={uiLanguage} language={profile.learningLanguage} isAdvanced={profile.isAdvanced} />
           ) : (
-            <SpeakingLockScreen daysCompleted={challengeStreak} uiLanguage={uiLanguage} colors={colors} />
+            <LockedFeatureScreen daysCompleted={challengeStreak} uiLanguage={uiLanguage} colors={colors} feature="speaking" />
           )}
         </View>
         <View style={{ flex: 1, display: activeTab === 'immersion' ? 'flex' : 'none' }}>
-          <ImmersionScreen uiLanguage={uiLanguage} language={profile.learningLanguage} />
+          {immersionUnlocked ? (
+            <ImmersionScreen uiLanguage={uiLanguage} language={profile.learningLanguage} />
+          ) : (
+            <LockedFeatureScreen daysCompleted={challengeStreak} uiLanguage={uiLanguage} colors={colors} feature="immersion" />
+          )}
         </View>
       </View>
     </View>

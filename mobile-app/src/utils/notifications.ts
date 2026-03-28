@@ -1,16 +1,35 @@
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Linking, Platform } from 'react-native';
 
-// Configurar cómo se muestran las notificaciones cuando el app está abierto
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const isAndroidExpoGo =
+  Platform.OS === 'android'
+  && (
+    (Constants as any).executionEnvironment === 'storeClient'
+    || (Constants as any).appOwnership === 'expo'
+  );
+
+const getNotificationsModule = () => {
+  if (isAndroidExpoGo) {
+    return null;
+  }
+  return require('expo-notifications');
+};
+
+const Notifications = getNotificationsModule();
+
+// Expo Go on Android no longer supports remote notifications in recent SDKs.
+// Avoid initializing the module there so development can continue without a dev build.
+if (Notifications) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 const NOTIFICATION_ID_KEY = 'daily_notification_id';
 
@@ -25,11 +44,13 @@ const messages = [
 export type PermissionStatus = 'granted' | 'denied' | 'undetermined';
 
 export const checkPermission = async (): Promise<PermissionStatus> => {
+  if (!Notifications) return 'undetermined';
   const { status } = await Notifications.getPermissionsAsync();
   return status as PermissionStatus;
 };
 
 export const requestPermission = async (): Promise<PermissionStatus> => {
+  if (!Notifications) return 'undetermined';
   const { status } = await Notifications.requestPermissionsAsync();
   return status as PermissionStatus;
 };
@@ -43,6 +64,8 @@ export const scheduleDailyNotification = async (
   minute: number,
   userName: string
 ): Promise<void> => {
+  if (!Notifications) return;
+
   // Cancelar notificación previa
   await cancelDailyNotification();
 
@@ -64,6 +87,7 @@ export const scheduleDailyNotification = async (
 };
 
 export const cancelDailyNotification = async (): Promise<void> => {
+  if (!Notifications) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 };
 
@@ -73,6 +97,8 @@ export const scheduleMemorizeNotification = async (
   userName: string,
   uiLang: 'he' | 'es' | 'en' = 'he'
 ): Promise<void> => {
+  if (!Notifications) return;
+
   const hour = (studyHour + 2) % 24;
 
   const content: Record<'he' | 'es' | 'en', { title: string; body: string }> = {

@@ -1,7 +1,53 @@
+use tauri::Manager;
+
 #[tauri::command]
 fn open_pdf(app: tauri::AppHandle, pdf: String) -> Result<(), String> {
+    let pdf = pdf.replace('\\', "/");
+    let allowed = [
+        "estructura-oraciones-espanol.pdf",
+        "combinaciones-especiales-espanol.pdf",
+        "conjugaciones-verbales-espanol.pdf",
+        "verbos-irregulares-espanol.pdf",
+    ];
+    if !allowed.contains(&pdf.as_str()) {
+        return Err("Invalid PDF file".into());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let resource_path = app
+            .path()
+            .resolve(
+                format!("docs/{}", pdf),
+                tauri::path::BaseDirectory::Resource,
+            )
+            .map_err(|e| e.to_string())?;
+
+        let escaped = resource_path.to_string_lossy().replace('\'', "''");
+        let status = std::process::Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                &format!("Start-Process -FilePath '{}'", escaped),
+            ])
+            .status()
+            .map_err(|e| e.to_string())?;
+
+        if status.success() {
+            return Ok(());
+        }
+
+        return Err("Failed to open PDF with default Windows app.".into());
+    }
+
     let label = format!("pdf_{}", pdf.replace('.', "_").replace('/', "_"));
-    let url = format!("docs/{}", pdf);
+    let url = format!("/docs/{}", pdf);
+
+    if let Some(existing) = app.get_webview_window(&label) {
+        existing.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
 
     tauri::WebviewWindowBuilder::new(
         &app,
@@ -78,17 +124,25 @@ fn speak_spanish_tts(text: String) -> Result<(), String> {
         let script = format!(
             "Add-Type -AssemblyName System.Speech; \
              $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; \
-             $preferred = @('es-ES','es-MX','es-US'); \
-             $selected = $false; \
-             foreach ($culture in $preferred) {{ \
-               $voice = $s.GetInstalledVoices() | Where-Object {{ $_.Enabled -and $_.VoiceInfo.Culture.Name -eq $culture }} | Select-Object -First 1; \
-               if ($voice) {{ $s.SelectVoice($voice.VoiceInfo.Name); $selected = $true; break; }} \
-             }} \
-             if (-not $selected) {{ \
-               $anySpanish = $s.GetInstalledVoices() | Where-Object {{ $_.Enabled -and $_.VoiceInfo.Culture.Name -like 'es-*' }} | Select-Object -First 1; \
-               if ($anySpanish) {{ $s.SelectVoice($anySpanish.VoiceInfo.Name); $selected = $true; }} \
-             }} \
-             if (-not $selected) {{ Write-Error 'NO_SPANISH_VOICE'; exit 2; }} \
+             $voices = $s.GetInstalledVoices() | Where-Object {{ $_.Enabled }}; \
+             $spanishVoices = $voices | Where-Object {{ $_.VoiceInfo.Culture.Name -like 'es-*' }}; \
+             if (-not $spanishVoices -or $spanishVoices.Count -eq 0) {{ Write-Error 'NO_SPANISH_VOICE'; exit 2; }} \
+             $preferredCultures = @('es-ES','es-MX','es-US'); \
+             $best = $spanishVoices | ForEach-Object {{ \
+               $v = $_.VoiceInfo; \
+               $score = 0; \
+               $culture = $v.Culture.Name; \
+               $name = $v.Name; \
+               $idx = [Array]::IndexOf($preferredCultures, $culture); \
+               if ($idx -ge 0) {{ $score += (300 - ($idx * 30)); }} \
+               if ($name -match '(?i)(neural|natural|online)') {{ $score += 120; }} \
+               if ($name -match '(?i)(premium|pro)') {{ $score += 40; }} \
+               if ($name -notmatch '(?i)desktop') {{ $score += 35; }} \
+               if ($name -match '(?i)microsoft') {{ $score += 10; }} \
+               [PSCustomObject]@{{ Score = $score; Name = $name }}; \
+             }} | Sort-Object -Property Score -Descending, Name; \
+             if (-not $best -or $best.Count -eq 0) {{ Write-Error 'NO_SPANISH_VOICE'; exit 2; }} \
+             $s.SelectVoice($best[0].Name); \
              $s.Speak('{}');",
             escaped
         );

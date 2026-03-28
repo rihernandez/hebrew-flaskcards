@@ -1,4 +1,5 @@
 import { useState, useEffect, ReactNode } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { isFavorite, toggleFavorite } from '../utils/storage';
 
 interface FlashcardProps {
@@ -57,14 +58,29 @@ export default function Flashcard({ id, word, pronunciation, meaning, examples, 
     setTimeout(() => setToast(false), 2500);
   };
 
-  const handleSpeakSpanish = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const speakWithWebSpeech = () => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = 'es-ES';
     utterance.rate = 0.95;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
+  };
+
+  const handleSpeakSpanish = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const isTauri = typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
+    if (isTauri) {
+      try {
+        await invoke('speak_spanish_tts', { text: word });
+        return;
+      } catch {
+        // Fallback to Web Speech if native TTS is unavailable in the host.
+      }
+    }
+
+    speakWithWebSpeech();
   };
 
   const showBack = isFlipped || manualFlip;

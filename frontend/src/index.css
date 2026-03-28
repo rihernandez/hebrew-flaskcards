@@ -1912,6 +1912,14 @@ html.dark .flashcard-front {
   background: var(--surface);
   color: var(--text);
 }
+
+html.dark .flashcard-front h1 {
+  color: #ffffff;
+}
+
+html.dark .flashcard-front h1 .genre {
+  color: rgba(255, 255, 255, 0.88);
+}
 html.dark .flashcard-audio-btn {
   border-color: #1e1e2e;
   background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
@@ -1920,6 +1928,17 @@ html.dark .flashcard-audio-btn {
 
 html.dark .flashcard-back {
   background: #4c1d95;
+  color: #ffffff;
+}
+
+html.dark .pronunciation-back,
+html.dark .meaning,
+html.dark .flashcard-back li {
+  color: #ffffff;
+}
+
+html.dark .genre-back {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 html.dark .controls button { background: #7c3aed; }

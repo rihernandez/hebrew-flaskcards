@@ -40,13 +40,88 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn speak_spanish_tts(text: String) -> Result<(), String> {
+    let phrase = text.trim().to_string();
+    if phrase.is_empty() {
+        return Ok(());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let spd = std::process::Command::new("spd-say")
+            .args(["-l", "es", &phrase])
+            .status();
+
+        if let Ok(status) = spd {
+            if status.success() {
+                return Ok(());
+            }
+        }
+
+        let espeak = std::process::Command::new("espeak")
+            .args(["-v", "es", &phrase])
+            .status();
+
+        if let Ok(status) = espeak {
+            if status.success() {
+                return Ok(());
+            }
+        }
+
+        return Err("No Linux TTS backend available (tried spd-say and espeak).".into());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let escaped = phrase.replace('\'', "''");
+        let script = format!(
+            "Add-Type -AssemblyName System.Speech; \
+             $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; \
+             $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceGender]::NotSet, \
+             [System.Speech.Synthesis.VoiceAge]::NotSet, 0, \
+             [System.Globalization.CultureInfo]'es-ES'); \
+             $s.Speak('{}');",
+            escaped
+        );
+
+        let status = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+            .status()
+            .map_err(|e| e.to_string())?;
+
+        if status.success() {
+            return Ok(());
+        }
+
+        return Err("Windows TTS command failed.".into());
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let status = std::process::Command::new("say")
+            .args(["-v", "Monica", &phrase])
+            .status()
+            .map_err(|e| e.to_string())?;
+
+        if status.success() {
+            return Ok(());
+        }
+
+        return Err("macOS TTS command failed.".into());
+    }
+
+    #[allow(unreachable_code)]
+    Err("TTS is not supported on this platform.".into())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_notification::init())
-    .invoke_handler(tauri::generate_handler![open_pdf, check_for_updates, install_update])
+    .invoke_handler(tauri::generate_handler![open_pdf, check_for_updates, install_update, speak_spanish_tts])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

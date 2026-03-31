@@ -2650,6 +2650,132 @@ html.dark .fav-btn.active { background: rgba(124,58,237,0.3); }
   box-shadow: 0 4px 8px rgba(244, 67, 54, 0.4);
 }
 
+.topic-voice-btn {
+  background: linear-gradient(135deg, #5ee7df 0%, #4d7dfc 100%);
+  color: white;
+}
+
+.topic-voice-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(77, 125, 252, 0.4);
+}
+
+.topic-voice-card {
+  width: min(760px, 100%);
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.topic-voice-card h2 {
+  color: #4d7dfc;
+  text-align: center;
+}
+
+.topic-voice-card p {
+  color: #4c4c6a;
+  text-align: center;
+}
+
+.topic-voice-topics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.topic-voice-topic-btn {
+  border: none;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #3f51b5;
+  font-weight: 700;
+  padding: 12px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topic-voice-topic-btn:hover {
+  transform: translateY(-1px);
+  background: #dfe7ff;
+}
+
+.topic-voice-attempts {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 28px;
+  color: #cfd4ff;
+}
+
+.topic-voice-attempts .used {
+  color: #f44336;
+}
+
+.topic-voice-answer {
+  width: 100%;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.topic-voice-answer-word {
+  font-size: clamp(52px, 11vw, 120px);
+  font-weight: 900;
+  line-height: 1.03;
+  word-break: break-word;
+}
+
+.topic-voice-answer-pron {
+  margin-top: 6px;
+  font-size: clamp(24px, 4.2vw, 44px);
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.topic-voice-answer.correct .topic-voice-answer-word,
+.topic-voice-answer.correct .topic-voice-answer-pron {
+  color: #1b5e20;
+}
+
+.topic-voice-answer.wrong .topic-voice-answer-word,
+.topic-voice-answer.wrong .topic-voice-answer-pron {
+  color: #b71c1c;
+}
+
+html.dark .topic-voice-card {
+  background: #1e1e2e;
+}
+
+html.dark .topic-voice-card p {
+  color: #d2d2ff;
+}
+
+html.dark .topic-voice-topic-btn {
+  background: #312f4f;
+  color: #d2d2ff;
+}
+
+html.dark .topic-voice-topic-btn:hover {
+  background: #3d3865;
+}
+
+html.dark .topic-voice-attempts {
+  color: #4d4f7d;
+}
+
+html.dark .topic-voice-answer.correct .topic-voice-answer-word,
+html.dark .topic-voice-answer.correct .topic-voice-answer-pron {
+  color: #8dff9d;
+}
+
+html.dark .topic-voice-answer.wrong .topic-voice-answer-word,
+html.dark .topic-voice-answer.wrong .topic-voice-answer-pron {
+  color: #ff9fa1;
+}
+
 /* ===== Update Checker ===== */
 .update-check-btn {
   padding: 5px 11px;

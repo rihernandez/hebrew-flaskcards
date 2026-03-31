@@ -9,6 +9,7 @@ import SearchBar from './components/SearchBar';
 import WordModal from './components/WordModal';
 import WriteMode from './components/WriteMode';
 import QuizMode from './components/QuizMode';
+import TopicVoiceMode from './components/TopicVoiceMode';
 import { addFocusError, getFavorites, getFocusErrors, updateStreak } from './utils/storage';
 import UpdateChecker from './components/UpdateChecker';
 
@@ -279,6 +280,7 @@ function App() {
   // Quiz mode
   const [quizMode, setQuizMode] = useState(false);
   const [quizSummary, setQuizSummary] = useState<{ correct: number; incorrect: number } | null>(null);
+  const [topicVoiceMode, setTopicVoiceMode] = useState(false);
 
   // Countdown state
   const [showCountdown, setShowCountdown] = useState(false);
@@ -504,6 +506,7 @@ function App() {
       setTopicRecoveryWords(null);
       setTopicRecoverySummary(null);
       setSmartReviewMode(false);
+      setTopicVoiceMode(false);
       setMenuVisible(true);
       clearShownWords(selectedLanguage, 'blitz');
       clearShownWords(selectedLanguage, 'bullet');
@@ -656,6 +659,7 @@ function App() {
 
   const handleTopicChange = (topic: string) => {
     setSelectedTopic(topic);
+    setTopicVoiceMode(false);
     resetTopicGateFlow();
     setWriteMode(false);
     setQuizMode(false);
@@ -746,6 +750,7 @@ function App() {
     setWriteMode(true);
     setWriteSummary(null);
     setFocusMode(false);
+    setTopicVoiceMode(false);
     setIsFlipped(false);
     setIsComplete(false);
   };
@@ -828,6 +833,7 @@ function App() {
     setQuizSummary(null);
     setWriteMode(false);
     setFocusMode(false);
+    setTopicVoiceMode(false);
     setIsFlipped(false);
     setIsComplete(false);
   };
@@ -835,6 +841,29 @@ function App() {
   const stopQuizMode = () => {
     setQuizMode(false);
     setQuizSummary(null);
+  };
+
+  const handleTopicVoiceMode = () => {
+    if (!selectedLanguage) return;
+    stopAutoPlay();
+    resetTopicGateFlow();
+    setSmartReviewMode(false);
+    setWriteMode(false);
+    setQuizMode(false);
+    setFocusMode(false);
+    setWriteSummary(null);
+    setQuizSummary(null);
+    setWords([]);
+    setSelectedTopic('');
+    setCurrentIndex(0);
+    setTopicVoiceMode(true);
+    setMenuVisible(false);
+    setIsFlipped(false);
+    setIsComplete(false);
+  };
+
+  const stopTopicVoiceMode = () => {
+    setTopicVoiceMode(false);
   };
 
   const handleFavoritesMode = () => {
@@ -849,6 +878,7 @@ function App() {
     setWords([...favWords].sort(() => Math.random() - 0.5));
     setCurrentIndex(0);
     setSelectedTopic('Favorites Mode');
+    setTopicVoiceMode(false);
     setWriteMode(false); setQuizMode(false); setFocusMode(false);
     setIsFlipped(false); setIsComplete(false);
   };
@@ -865,6 +895,7 @@ function App() {
     setWords([...errWords].sort(() => Math.random() - 0.5));
     setCurrentIndex(0);
     setSelectedTopic('Errors Mode');
+    setTopicVoiceMode(false);
     setWriteMode(false); setQuizMode(false); setFocusMode(false);
     setIsFlipped(false); setIsComplete(false);
   };
@@ -876,6 +907,7 @@ function App() {
     setWriteMode(false);
     setQuizMode(false);
     setFocusMode(false);
+    setTopicVoiceMode(false);
 
     const cards = getSrsCards();
     const today = toYmd();
@@ -971,6 +1003,7 @@ function App() {
     stopFocusMode();
     stopWriteMode();
     stopQuizMode();
+    stopTopicVoiceMode();
     setWords([]);
     setTopicWords([]);
     setTopicCoreBatchWords([]);
@@ -1155,6 +1188,7 @@ function App() {
               onBulletMode={handleBulletMode}
               onWriteMode={handleWriteMode}
               onQuizMode={handleQuizMode}
+              onTopicVoiceMode={handleTopicVoiceMode}
               onFavoritesMode={handleFavoritesMode}
               onErrorsMode={handleErrorsMode}
               selectedLanguage={selectedLanguage}
@@ -1166,6 +1200,17 @@ function App() {
         )}
         
         <div className="flashcard-container">
+          {topicVoiceMode && (
+            <TopicVoiceMode
+              allWords={allWords}
+              selectedLanguage={selectedLanguage}
+              translations={t}
+              onClose={() => {
+                stopTopicVoiceMode();
+                setMenuVisible(true);
+              }}
+            />
+          )}
           {topicPracticeWords && (
             <QuizMode
               words={topicPracticeWords}
@@ -1404,7 +1449,7 @@ function App() {
               </button>
             </div>
           )}
-          {words.length === 0 && selectedTopic && (
+          {words.length === 0 && selectedTopic && !topicVoiceMode && (
             <p>{t.noWords}</p>
           )}
         </div>

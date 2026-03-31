@@ -17,6 +17,7 @@ interface TopicMenuProps {
   onBulletMode: () => void;
   onWriteMode: () => void;
   onQuizMode: () => void;
+  onTopicVoiceMode: () => void;
   onFavoritesMode: () => void;
   onErrorsMode: () => void;
   selectedLanguage: string;
@@ -26,7 +27,7 @@ interface TopicMenuProps {
 
 export default function TopicMenu({
   topics, selectedTopic, onTopicChange,
-  onFocusMode, onBlitzMode, onBulletMode, onWriteMode, onQuizMode,
+  onFocusMode, onBlitzMode, onBulletMode, onWriteMode, onQuizMode, onTopicVoiceMode,
   onFavoritesMode, onErrorsMode,
   selectedLanguage, translations, allWords,
 }: TopicMenuProps) {
@@ -91,6 +92,9 @@ export default function TopicMenu({
 
         <button className="mode-btn write-btn" onClick={onWriteMode}>{translations.write}</button>
         <button className="mode-btn quiz-btn" onClick={onQuizMode}>{translations.quiz}</button>
+        <button className="mode-btn topic-voice-btn" onClick={onTopicVoiceMode}>
+          {translations.topicVoice}
+        </button>
 
         {favCount > 0 && (
           <button className="mode-btn fav-mode-btn" onClick={onFavoritesMode}>

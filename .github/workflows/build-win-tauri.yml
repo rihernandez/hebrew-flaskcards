@@ -3,7 +3,11 @@ name: Build Tauri (Windows + Linux)
 on:
   push:
     branches: [main, master]
+    tags: [v*]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -32,7 +36,15 @@ jobs:
           releaseName: Hebrew Flashcards v__VERSION__
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/') }}
           prerelease: false
-          includeUpdaterJson: true
+          includeUpdaterJson: false
+
+      - name: Upload updater manifest (Windows)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-manifest-windows
+          path: frontend/src-tauri/target/release/bundle/latest.json
+          if-no-files-found: error
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -71,4 +83,40 @@ jobs:
           releaseName: Hebrew Flashcards v__VERSION__
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/') }}
           prerelease: false
-          includeUpdaterJson: true
+          includeUpdaterJson: false
+
+      - name: Upload updater manifest (Linux)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-manifest-linux
+          path: frontend/src-tauri/target/release/bundle/latest.json
+          if-no-files-found: error
+
+  publish-updater-manifest:
+    runs-on: ubuntu-22.04
+    needs: [build-windows, build-linux]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: updater-manifest-*
+          path: updater-manifests
+
+      - name: Merge Windows + Linux updater manifests
+        run: |
+          jq -s '
+            reduce .[] as $item (
+              {};
+              .version = $item.version
+              | .notes = ($item.notes // .notes // "")
+              | .pub_date = $item.pub_date
+              | .platforms = ((.platforms // {}) + ($item.platforms // {}))
+            )
+          ' updater-manifests/*/latest.json > latest.json
+
+      - name: Upload merged latest.json to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" latest.json --clobber
